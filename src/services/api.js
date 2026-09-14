@@ -10,9 +10,14 @@ const API_BASE_URL = import.meta.env.VITE_API_URL ||
 async function request(endpoint, options = {}) {
   // Garante que o endpoint não duplica o prefixo /api
   const url = `${API_BASE_URL}${endpoint}`;
+
+  // Lê o token JWT do localStorage e injeta no header Authorization
+  const token = localStorage.getItem("pf_auth_token");
+
   const config = {
     headers: {
       "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
     ...options,
@@ -22,6 +27,11 @@ async function request(endpoint, options = {}) {
     const response = await fetch(url, config);
 
     if (!response.ok) {
+      // Token expirado ou inválido → dispara logout global
+      if (response.status === 401) {
+        window.dispatchEvent(new CustomEvent("pf:unauthorized"));
+      }
+
       let errorMessage = `Erro ${response.status}: ${response.statusText}`;
       try {
         const errorData = await response.json();
@@ -148,7 +158,38 @@ export async function atualizarStatusPedido(pedidoId, status) {
   });
 }
 
+// =============================================
+// AUTENTICAÇÃO
+// =============================================
+
+/**
+ * Realiza o login e retorna o token JWT.
+ * @param {{ email: string, password: string }} credentials
+ * @returns {{ token: string, expiresIn: number }}
+ */
+export async function login({ email, password }) {
+  // Login não usa o helper request() pois não precisa de token
+  const url = `${API_BASE_URL}/auth/login`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+
+  if (!response.ok) {
+    let msg = `Erro ${response.status}`;
+    try {
+      const data = await response.json();
+      if (data?.error) msg = data.error;
+    } catch { /* ignore */ }
+    throw new Error(msg);
+  }
+
+  return await response.json();
+}
+
 export const api = {
+  login,
   getClientes,
   criarCliente,
   getServicos,
@@ -159,3 +200,4 @@ export const api = {
 };
 
 export default api;
+

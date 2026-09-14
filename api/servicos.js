@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
+import { requireAuth } from "./_lib/auth.js";
 
 // Singleton Prisma para serverless
 const globalForPrisma = globalThis;
@@ -19,6 +20,10 @@ const corsHeaders = {
 export default async function handler(req, res) {
   Object.entries(corsHeaders).forEach(([k, v]) => res.setHeader(k, v));
   if (req.method === "OPTIONS") return res.status(200).end();
+
+  // 🔒 Autenticação obrigatória
+  const auth = requireAuth(req, res);
+  if (!auth) return;
 
   // GET /api/servicos
   if (req.method === "GET") {

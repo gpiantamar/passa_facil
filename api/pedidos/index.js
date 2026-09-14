@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
+import { requireAuth } from "../_lib/auth.js";
 
 // Singleton Prisma para serverless
 const globalForPrisma = globalThis;
@@ -21,6 +22,10 @@ const STATUS_PERMITIDOS = ["recebido", "passando", "pronto", "entregue"];
 export default async function handler(req, res) {
   Object.entries(corsHeaders).forEach(([k, v]) => res.setHeader(k, v));
   if (req.method === "OPTIONS") return res.status(200).end();
+
+  // 🔒 Autenticação obrigatória
+  const auth = requireAuth(req, res);
+  if (!auth) return;
 
   // GET /api/pedidos
   if (req.method === "GET") {
@@ -68,7 +73,7 @@ export default async function handler(req, res) {
         const quantidade = parseInt(item.quantidade, 10);
         if (isNaN(quantidade) || quantidade <= 0) {
           return res.status(400).json({
-            error: `Quantidade inválida para o serviço '${item.servicoId}'. Deve ser um inteiro positivo.`,
+            error: `Quantidade inválida para o serviço '${item.servicoId}'.`,
           });
         }
 
@@ -89,7 +94,7 @@ export default async function handler(req, res) {
       const statusFinal = typeof status === "string" ? status.toLowerCase().trim() : "recebido";
       if (!STATUS_PERMITIDOS.includes(statusFinal)) {
         return res.status(400).json({
-          error: `Status inválido. Status permitidos: ${STATUS_PERMITIDOS.join(", ")}.`,
+          error: `Status inválido. Permitidos: ${STATUS_PERMITIDOS.join(", ")}.`,
         });
       }
 
@@ -111,9 +116,6 @@ export default async function handler(req, res) {
       return res.status(201).json(novoPedido);
     } catch (error) {
       console.error("[POST /api/pedidos]", error);
-      if (error.code === "P2002") {
-        return res.status(409).json({ error: "Violação de campo único (registro duplicado)." });
-      }
       return res.status(500).json({ error: "Erro interno ao criar pedido." });
     }
   }

@@ -1,11 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Wind, ArrowRight } from "lucide-react";
+import { Wind, ArrowRight, AlertCircle } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Input } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
+import { useAuth } from "../../hooks/useAuth";
+import { login } from "../../services/api.js";
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -16,21 +18,29 @@ type LoginSchema = z.infer<typeof loginSchema>;
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const { login: saveToken } = useAuth();
+  const [serverError, setServerError] = useState<string | null>(null);
+
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
+    defaultValues: { email: "", password: "" },
   });
 
-  const onSubmit = async () => {
-    await new Promise((r) => setTimeout(r, 800));
-    navigate("/");
+  const onSubmit = async (data: LoginSchema) => {
+    setServerError(null);
+    try {
+      const result = await login({ email: data.email, password: data.password });
+      saveToken(result.token);
+      navigate("/", { replace: true });
+    } catch (err) {
+      setServerError(
+        err instanceof Error ? err.message : "Não foi possível fazer login. Tente novamente."
+      );
+    }
   };
 
   return (
@@ -50,6 +60,14 @@ export function LoginPage() {
           <h2 className="text-base font-semibold text-slate-800 mb-5">
             Entrar na sua conta
           </h2>
+
+          {/* Erro do servidor */}
+          {serverError && (
+            <div className="flex items-start gap-2.5 bg-red-50 border border-red-100 rounded-xl px-3.5 py-3 mb-4">
+              <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-red-700">{serverError}</p>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
             <Input

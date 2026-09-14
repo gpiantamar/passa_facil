@@ -51,7 +51,10 @@ export function criarPedido(data: {
 
 export function atualizarStatusPedido(pedidoId: number | string, status: string): Promise<PedidoApi>;
 
+export function login(credentials: { email: string; password: string }): Promise<{ token: string; expiresIn: number }>;
+
 export const api: {
+  login: typeof login;
   getClientes: typeof getClientes;
   criarCliente: typeof criarCliente;
   getServicos: typeof getServicos;

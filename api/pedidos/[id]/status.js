@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
+import { requireAuth } from "../../_lib/auth.js";
 
 // Singleton Prisma para serverless
 const globalForPrisma = globalThis;
@@ -22,10 +23,13 @@ export default async function handler(req, res) {
   Object.entries(corsHeaders).forEach(([k, v]) => res.setHeader(k, v));
   if (req.method === "OPTIONS") return res.status(200).end();
 
+  // 🔒 Autenticação obrigatória
+  const auth = requireAuth(req, res);
+  if (!auth) return;
+
   // PATCH /api/pedidos/[id]/status
   if (req.method === "PATCH") {
     try {
-      // O Vercel injeta o parâmetro dinâmico via req.query
       const { id } = req.query;
       const { status } = req.body;
 
@@ -40,7 +44,7 @@ export default async function handler(req, res) {
       const statusNormalizado = status.toLowerCase().trim();
       if (!STATUS_PERMITIDOS.includes(statusNormalizado)) {
         return res.status(400).json({
-          error: `Status inválido: '${status}'. Status permitidos: ${STATUS_PERMITIDOS.join(", ")}.`,
+          error: `Status inválido: '${status}'. Permitidos: ${STATUS_PERMITIDOS.join(", ")}.`,
         });
       }
 
@@ -62,7 +66,7 @@ export default async function handler(req, res) {
     } catch (error) {
       console.error("[PATCH /api/pedidos/[id]/status]", error);
       if (error.code === "P2025") {
-        return res.status(404).json({ error: "Pedido não encontrado no banco de dados." });
+        return res.status(404).json({ error: "Pedido não encontrado." });
       }
       return res.status(500).json({ error: "Erro interno ao atualizar status do pedido." });
     }

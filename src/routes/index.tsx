@@ -16,15 +16,36 @@ import { ServiceDetailPage } from "../pages/Services/ServiceDetailPage";
 import { PaymentsPage } from "../pages/Payments/PaymentsPage";
 import { ReportsPage } from "../pages/Reports/ReportsPage";
 import { SettingsPage } from "../pages/Settings/SettingsPage";
+import { useAuth } from "../hooks/useAuth";
+
+/**
+ * Guarda de rota: redireciona para /login se não autenticado.
+ * Redireciona para / se já autenticado e tenta acessar /login.
+ */
+function ProtectedLayout() {
+  const { isAuthenticated } = useAuth();
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  return <AppLayout />;
+}
+
+function PublicOnlyRoute({ element }: { element: React.ReactElement }) {
+  const { isAuthenticated } = useAuth();
+  if (isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+  return element;
+}
 
 const router = createBrowserRouter([
   {
     path: "/login",
-    element: <LoginPage />,
+    element: <PublicOnlyRoute element={<LoginPage />} />,
   },
   {
     path: "/",
-    element: <AppLayout />,
+    element: <ProtectedLayout />,
     children: [
       { index: true, element: <DashboardPage /> },
       { path: "clientes", element: <ClientsPage /> },
