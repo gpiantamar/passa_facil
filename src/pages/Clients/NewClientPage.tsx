@@ -38,7 +38,7 @@ export function NewClientPage() {
         endereco: data.address?.trim() || undefined,
       });
       addToast("Cliente cadastrado com sucesso!", "success");
-      navigate("/clientes");
+      navigate("/painel/clientes");
     } catch (err: any) {
       console.error("Erro ao cadastrar cliente:", err);
       addToast(
@@ -53,7 +53,7 @@ export function NewClientPage() {
       <PageHeader
         title="Novo cliente"
         breadcrumbs={[
-          { label: "Clientes", href: "/clientes" },
+          { label: "Clientes", href: "/painel/clientes" },
           { label: "Novo cliente" },
         ]}
       />
@@ -111,7 +111,7 @@ export function NewClientPage() {
               type="button"
               variant="outline"
               fullWidth
-              onClick={() => navigate("/clientes")}
+              onClick={() => navigate("/painel/clientes")}
               disabled={isSubmitting}
             >
               Cancelar

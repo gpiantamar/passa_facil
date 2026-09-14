@@ -228,7 +228,7 @@ export function ClientsPage() {
                   return (
                     <tr
                       key={client.id}
-                      onClick={() => navigate(`/clientes/${client.id}`)}
+                      onClick={() => navigate(`/painel/clientes/${client.id}`)}
                       className="hover:bg-slate-50/80 cursor-pointer transition-colors"
                     >
                       <td className="px-5 py-3.5">
@@ -281,7 +281,7 @@ export function ClientsPage() {
               return (
                 <div
                   key={client.id}
-                  onClick={() => navigate(`/clientes/${client.id}`)}
+                  onClick={() => navigate(`/painel/clientes/${client.id}`)}
                   className="bg-white rounded-xl border border-slate-200/80 shadow-2xs p-4 text-left w-full hover:shadow-xs transition-shadow cursor-pointer flex flex-col gap-2"
                 >
                   <div className="flex items-start justify-between gap-2">

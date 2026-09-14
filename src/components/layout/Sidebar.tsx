@@ -1,5 +1,5 @@
 import React from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, Link } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -11,17 +11,18 @@ import {
   LogOut,
   X,
   CreditCard,
+  Globe,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 
 const navItems = [
-  { to: "/", label: "Painel Operacional", icon: LayoutDashboard, end: true },
-  { to: "/pedidos", label: "Fluxo de Pedidos", icon: Shirt },
-  { to: "/clientes", label: "Clientes", icon: Users },
-  { to: "/tabela-precos", label: "Tabela de Preços", icon: Tag },
-  { to: "/pagamentos", label: "Pagamentos", icon: CreditCard },
-  { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
-  { to: "/configuracoes", label: "Configurações", icon: Settings },
+  { to: "/painel", label: "Painel Operacional", icon: LayoutDashboard, end: true },
+  { to: "/painel/pedidos", label: "Fluxo de Pedidos", icon: Shirt },
+  { to: "/painel/clientes", label: "Clientes", icon: Users },
+  { to: "/painel/tabela-precos", label: "Tabela de Preços", icon: Tag },
+  { to: "/painel/pagamentos", label: "Pagamentos", icon: CreditCard },
+  { to: "/painel/relatorios", label: "Relatórios", icon: BarChart3 },
+  { to: "/painel/configuracoes", label: "Configurações", icon: Settings },
 ];
 
 interface SidebarProps {
@@ -42,8 +43,8 @@ export function Sidebar({ open, onClose }: SidebarProps) {
     <aside className="flex flex-col h-full bg-white border-r border-slate-200/80">
       {/* Logo e Identificação Operacional */}
       <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
-        <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center flex-shrink-0 shadow-xs shadow-indigo-200">
-          <Wind className="w-5 h-5 text-white" />
+        <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center flex-shrink-0 shadow-xs shadow-indigo-200 text-white">
+          <Wind className="w-5 h-5" />
         </div>
         <div className="min-w-0">
           <p className="text-sm font-extrabold text-slate-900 leading-tight">PassaFácil</p>
@@ -93,6 +94,18 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         </ul>
       </nav>
 
+      {/* Acesso Rápido para Voltar à Landing Page */}
+      <div className="px-3 py-2 border-t border-slate-100">
+        <Link
+          to="/"
+          onClick={onClose}
+          className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-indigo-600 hover:bg-slate-50 transition-colors"
+        >
+          <Globe className="w-4 h-4 text-slate-400" />
+          <span>Voltar ao Início (Site)</span>
+        </Link>
+      </div>
+
       {/* Rodapé do Usuário Operador */}
       <div className="px-3 py-3 border-t border-slate-100 bg-slate-50/50">
         <div className="flex items-center gap-3 px-2 py-1.5 rounded-xl">
@@ -105,7 +118,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
             </p>
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
-              <p className="text-[11px] text-slate-500">Sistema Conectado</p>
+              <p className="text-[11px] text-slate-500">Online</p>
             </div>
           </div>
           <button

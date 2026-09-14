@@ -133,7 +133,7 @@ export function ServicesPage() {
         subtitle="Acompanhe todos os pedidos e seus status em tempo real."
         actions={
           <Button
-            onClick={() => navigate("/servicos/novo")}
+            onClick={() => navigate("/painel/servicos/novo")}
             leftIcon={<Plus className="w-4 h-4 flex-shrink-0" />}
           >
             Novo pedido
@@ -202,7 +202,7 @@ export function ServicesPage() {
           action={
             !debouncedSearch && status === "TODOS" ? (
               <Button
-                onClick={() => navigate("/servicos/novo")}
+                onClick={() => navigate("/painel/servicos/novo")}
                 leftIcon={<Plus className="w-4 h-4 flex-shrink-0" />}
                 size="sm"
               >
@@ -239,7 +239,7 @@ export function ServicesPage() {
                   return (
                     <tr
                       key={service.id}
-                      onClick={() => navigate(`/servicos/${service.id}`)}
+                      onClick={() => navigate(`/painel/servicos/${service.id}`)}
                       className="hover:bg-slate-50/80 cursor-pointer transition-colors"
                     >
                       <td className="px-5 py-3.5">
@@ -304,7 +304,7 @@ export function ServicesPage() {
               return (
                 <div
                   key={service.id}
-                  onClick={() => navigate(`/servicos/${service.id}`)}
+                  onClick={() => navigate(`/painel/servicos/${service.id}`)}
                   className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 text-left w-full hover:shadow-md transition-shadow cursor-pointer"
                 >
                   <div className="flex items-start justify-between gap-2 mb-2">

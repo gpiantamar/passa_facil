@@ -2,232 +2,328 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Wind,
-  Sparkles,
-  Shirt,
-  Clock,
-  Truck,
-  CheckCircle2,
   ArrowRight,
-  ShieldCheck,
-  Tag,
-  Star,
+  LayoutDashboard,
+  CheckCircle2,
+  Clock,
+  Sparkles,
+  Truck,
   MessageCircle,
-  Zap,
+  Calculator,
+  Users,
+  Shirt,
+  Tag,
+  ShieldCheck,
+  Check,
+  ChevronRight,
+  ExternalLink,
 } from "lucide-react";
 
-// ─── Dados de Diferenciais ───────────────────────────────────────────────────
+// ─── Dados de Funcionalidades ────────────────────────────────────────────────
 
-const differentials = [
+const features = [
   {
-    icon: Truck,
-    title: "Rapidez & Pontualidade",
-    desc: "Suas peças prontas e cheirosas no prazo prometido. Opção express com entrega em até 24h.",
-    badge: "Entrega em até 24h",
-    accent: "from-sky-500 to-blue-600",
-    bg: "bg-sky-50 text-sky-700",
-  },
-  {
-    icon: Sparkles,
-    title: "Cuidado com Tecidos Nobres",
-    desc: "Temperatura e vapor ideais para linhos, sedas, camisas sociais e peças com bordados ou pedrarias.",
-    badge: "Acabamento de alfaiataria",
-    accent: "from-violet-500 to-indigo-600",
-    bg: "bg-violet-50 text-violet-700",
+    icon: LayoutDashboard,
+    title: "Controle de Pedidos em Kanban",
+    desc: "Visualização clara do fluxo operacional: Recebido, Passando, Pronto e Entregue. Movimente os pedidos com apenas um clique.",
+    badge: "Esteira de Produção",
+    color: "from-blue-500 to-indigo-600",
+    bg: "bg-blue-50 text-blue-700",
   },
   {
     icon: MessageCircle,
-    title: "Praticidade & WhatsApp",
-    desc: "Acompanhamento digital de cada pedido. Notificações diretas pelo WhatsApp assim que a roupa estiver pronta.",
-    badge: "Contato instantâneo",
-    accent: "from-emerald-500 to-teal-600",
+    title: "Notificação com 1 Clique no WhatsApp",
+    desc: "Avisos automáticos e padronizados para o WhatsApp do cliente assim que as roupas ficarem prontas para retirada.",
+    badge: "Comunicação Instantânea",
+    color: "from-emerald-500 to-teal-600",
     bg: "bg-emerald-50 text-emerald-700",
   },
   {
-    icon: Tag,
-    title: "Preço Justo & Transparente",
-    desc: "Tabela clara por peça ou pacote. Você sabe exatamente quanto vai pagar antes de fechar o pedido.",
-    badge: "Sem taxas surpresa",
-    accent: "from-indigo-500 to-purple-600",
-    bg: "bg-indigo-50 text-indigo-700",
+    icon: Calculator,
+    title: "Cálculo Automático por Peça",
+    desc: "Comanda rápida com seletores de quantidade (+) e (-) para cada tipo de roupa, somando valores e peças sem risco de erros.",
+    badge: "Comanda Inteligente",
+    color: "from-violet-500 to-purple-600",
+    bg: "bg-violet-50 text-violet-700",
+  },
+  {
+    icon: Users,
+    title: "Histórico Completo de Clientes",
+    desc: "Cadastro ágil com máscara de telefone, registro de preferências especiais e histórico detalhado de todas as comandas feitas.",
+    badge: "Fidelização",
+    color: "from-sky-500 to-cyan-600",
+    bg: "bg-sky-50 text-sky-700",
   },
 ];
 
-// ─── Tabela de Preços Base / Serviços Comuns ─────────────────────────────────
+// ─── Passos de "Como Funciona" ───────────────────────────────────────────────
+
+const steps = [
+  {
+    number: "01",
+    title: "Registre as peças recebidas",
+    desc: "Abra a comanda rápida, selecione o cliente e use os botões (+) e (-) para marcar as camisas, calças e vestidos recebidos.",
+    icon: Shirt,
+  },
+  {
+    number: "02",
+    title: "Acompanhe a esteira de produção",
+    desc: "Visualize os pedidos na tábua e avance o status de 'Recebido' para 'Passando' e depois para 'Pronto' com agilidade total.",
+    icon: Sparkles,
+  },
+  {
+    number: "03",
+    title: "Avise o cliente e finalize a entrega",
+    desc: "Clique no botão oficial do WhatsApp para enviar o aviso de retirada pronto e confirme a entrega ao cliente.",
+    icon: Truck,
+  },
+];
+
+// ─── Tabela de Preços Base ───────────────────────────────────────────────────
 
 const commonPrices = [
-  { piece: "Camisa Social / Linho", unit: "unidade", time: "24h", price: "R$ 7,50", highlight: true },
-  { piece: "Calça Jeans / Alfaiataria", unit: "unidade", time: "24h", price: "R$ 8,00", highlight: false },
-  { piece: "Camiseta Básica / Polo", unit: "unidade", time: "24h", price: "R$ 5,00", highlight: false },
-  { piece: "Vestido Simples / Midi", unit: "unidade", time: "24h a 48h", price: "R$ 14,00", highlight: false },
-  { piece: "Vestido de Festa / Tecido Fino", unit: "unidade", time: "48h", price: "R$ 22,00", highlight: true },
-  { piece: "Lençol / Colcha de Cama (Casal/Queen)", unit: "peça", time: "48h", price: "R$ 16,00", highlight: false },
-  { piece: "Paletó / Blazer", unit: "unidade", time: "48h", price: "R$ 18,00", highlight: false },
-  { piece: "Pacote Família (a partir de 20 peças)", unit: "lote", time: "48h", price: "Sob consulta", highlight: true },
-];
-
-// ─── Depoimentos ─────────────────────────────────────────────────────────────
-
-const testimonials = [
-  {
-    name: "Carolina Mendes",
-    role: "Advogada",
-    text: "Minhas camisas de trabalho nunca mais ficaram com marcas de ferro. O caimento é perfeito e a entrega sempre no dia certo!",
-    stars: 5,
-  },
-  {
-    name: "Roberto Silveira",
-    role: "Empresário",
-    text: "Economizo horas do meu fim de semana. Avisam pelo WhatsApp quando está pronto e eu só passo para retirar. Recomendo muito.",
-    stars: 5,
-  },
-  {
-    name: "Mariana Alencar",
-    role: "Mãe e Designer",
-    text: "O cuidado com roupas infantis e vestidos de seda é excepcional. Além disso, o preço por peça é super justo e transparente.",
-    stars: 5,
-  },
+  { piece: "Camisa Social / Linho", time: "24h", price: "R$ 7,50", popular: true },
+  { piece: "Calça Jeans / Alfaiataria", time: "24h", price: "R$ 8,00", popular: false },
+  { piece: "Camiseta Básica / Polo", time: "24h", price: "R$ 5,00", popular: false },
+  { piece: "Vestido Simples / Midi", time: "48h", price: "R$ 14,00", popular: false },
+  { piece: "Vestido de Festa / Tecido Fino", time: "48h", price: "R$ 22,00", popular: true },
+  { piece: "Lençol / Colcha de Cama (Casal/Queen)", time: "48h", price: "R$ 16,00", popular: false },
 ];
 
 export function LandingPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-sky-50/40 text-slate-800 font-sans selection:bg-indigo-100 selection:text-indigo-800">
-      {/* ── NAVBAR ───────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-slate-100">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-indigo-100 selection:text-indigo-800">
+      {/* ── HEADER FIXO ──────────────────────────────────────────────────── */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          {/* Logo */}
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-sky-500 flex items-center justify-center shadow-md shadow-indigo-200">
-              <Wind className="w-5 h-5 text-white" />
+            <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-xs shadow-indigo-200">
+              <Wind className="w-5 h-5" />
             </div>
             <div>
-              <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-indigo-700 to-sky-600 bg-clip-text text-transparent">
-                PassaFácil
-              </span>
-              <span className="hidden sm:inline-block ml-2 text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
-                Passadoria
+              <span className="font-extrabold text-lg text-slate-900 tracking-tight">PassaFácil</span>
+              <span className="hidden sm:inline-block ml-2 text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                Operacional
               </span>
             </div>
           </div>
 
-          <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600">
-            <a href="#diferenciais" className="hover:text-indigo-600 transition-colors">
-              Diferenciais
+          {/* Links de Navegação Suave */}
+          <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-600">
+            <a href="#funcionalidades" className="hover:text-indigo-600 transition-colors">
+              Funcionalidades
+            </a>
+            <a href="#como-funciona" className="hover:text-indigo-600 transition-colors">
+              Como Funciona
             </a>
             <a href="#precos" className="hover:text-indigo-600 transition-colors">
               Tabela de Preços
             </a>
-            <a href="#depoimentos" className="hover:text-indigo-600 transition-colors">
-              Depoimentos
-            </a>
           </nav>
 
+          {/* Botão de Destaque para o Painel */}
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate("/entrar")}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white text-sm font-semibold px-4 sm:px-5 py-2.5 rounded-xl shadow-md shadow-indigo-100 transition-all hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
+              onClick={() => navigate("/painel")}
+              className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm px-4 sm:px-5 py-2.5 rounded-xl shadow-xs shadow-indigo-200 transition-all hover:shadow-md hover:-translate-y-0.5 active:translate-y-0"
             >
-              <span>Acessar Sistema</span>
+              <span>Acessar Painel</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>
       </header>
 
-      {/* ── HERO SECTION ─────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden pt-12 pb-20 sm:pt-20 sm:pb-28 px-4 sm:px-6">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-gradient-to-tr from-indigo-200/40 via-sky-200/30 to-violet-200/20 rounded-full blur-3xl pointer-events-none -z-10" />
+      {/* ── HERO SECTION COM MOCKUP VISUAL DO KANBAN ─────────────────────── */}
+      <section className="pt-28 pb-16 sm:pt-36 sm:pb-24 px-4 sm:px-6 relative overflow-hidden">
+        {/* Glow de fundo */}
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-gradient-to-r from-indigo-200/30 via-sky-200/20 to-violet-200/20 rounded-full blur-3xl pointer-events-none -z-10" />
 
-        <div className="max-w-4xl mx-auto text-center">
+        <div className="max-w-5xl mx-auto text-center">
           {/* Badge superior */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs sm:text-sm font-medium mb-6 shadow-sm">
-            <Sparkles className="w-4 h-4 text-indigo-600" />
-            <span>Passadoria profissional e sob medida</span>
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-bold mb-6">
+            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+            <span>Sistema Operacional Especializado em Passadorias</span>
           </div>
 
-          {/* Chamada principal exigida */}
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.15] mb-6">
-            Suas roupas impecáveis{" "}
+          {/* Título Marcante Solicitado */}
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.15] mb-6">
+            A gestão completa da sua passadoria{" "}
             <span className="bg-gradient-to-r from-indigo-600 via-sky-600 to-violet-600 bg-clip-text text-transparent">
-              sem você perder tempo
+              em um só lugar
             </span>
           </h1>
 
-          <p className="text-base sm:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed mb-9">
-            Deixe o ferro e a tábua de lado. Cuidamos das suas peças com carinho, vapor profissional e acabamento impecável para você vestir o seu melhor todos os dias.
+          {/* Subtítulo explicativo */}
+          <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed mb-9">
+            Ganhe agilidade na recepção de comandas, controle cada peça na tábua e avise seus clientes pelo WhatsApp assim que as roupas ficarem prontas.
           </p>
 
           {/* Botões de Ação */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-12">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 mb-14">
             <button
-              onClick={() => navigate("/entrar")}
+              onClick={() => navigate("/painel")}
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-7 py-3.5 rounded-2xl text-base shadow-lg shadow-indigo-200 hover:shadow-xl transition-all hover:-translate-y-0.5 active:translate-y-0"
             >
-              <span>Entrar no Sistema</span>
-              <ArrowRight className="w-5 h-5" />
+              <LayoutDashboard className="w-5 h-5" />
+              <span>Abrir Painel de Gestão</span>
+              <ArrowRight className="w-4 h-4" />
             </button>
             <a
-              href="#precos"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-700 font-semibold px-6 py-3.5 rounded-2xl text-base border border-slate-200/80 shadow-sm transition-all"
+              href="#funcionalidades"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-700 font-bold px-6 py-3.5 rounded-2xl text-base border border-slate-200 shadow-2xs transition-all"
             >
-              <Tag className="w-4 h-4 text-slate-400" />
-              <span>Ver Tabela de Preços</span>
+              <span>Ver Funcionalidades</span>
+              <ChevronRight className="w-4 h-4 text-slate-400" />
             </a>
           </div>
 
-          {/* 3 Diferenciais Rápidos / Badges do Hero */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto">
-            <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white/80 border border-slate-100 shadow-sm">
-              <Truck className="w-4 h-4 text-sky-600 flex-shrink-0" />
-              <span className="text-xs sm:text-sm font-semibold text-slate-700">Entrega em até 24h</span>
+          {/* ── MOCKUP VISUAL DO QUADRO KANBAN EM TEMPO REAL ───────────────── */}
+          <div className="max-w-4xl mx-auto bg-white rounded-3xl border border-slate-200 shadow-xl p-4 sm:p-6 text-left relative">
+            <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-400" />
+                <div className="w-3 h-3 rounded-full bg-amber-400" />
+                <div className="w-3 h-3 rounded-full bg-emerald-400" />
+                <span className="ml-2 text-xs font-bold text-slate-600">Simulação do Fluxo Kanban Operacional</span>
+              </div>
+              <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Tempo Real
+              </span>
             </div>
-            <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white/80 border border-slate-100 shadow-sm">
-              <Sparkles className="w-4 h-4 text-violet-600 flex-shrink-0" />
-              <span className="text-xs sm:text-sm font-semibold text-slate-700">Cuidado profissional</span>
-            </div>
-            <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white/80 border border-slate-100 shadow-sm">
-              <Tag className="w-4 h-4 text-indigo-600 flex-shrink-0" />
-              <span className="text-xs sm:text-sm font-semibold text-slate-700">Preço justo por peça</span>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {/* Coluna 1: Recebido */}
+              <div className="bg-blue-50/50 rounded-2xl p-3 border border-blue-100/80 flex flex-col gap-2">
+                <div className="flex items-center justify-between text-xs font-bold text-blue-900 pb-1 border-b border-blue-100">
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5" /> Recebido
+                  </span>
+                  <span className="bg-white text-blue-700 px-1.5 py-0.2 rounded text-[10px]">1</span>
+                </div>
+                <div className="bg-white p-2.5 rounded-xl border border-slate-100 shadow-2xs text-xs space-y-1">
+                  <div className="flex justify-between font-mono font-bold text-[11px] text-indigo-600">
+                    <span>#000142</span>
+                    <span className="text-slate-400">R$ 30,00</span>
+                  </div>
+                  <p className="font-bold text-slate-800 truncate">Maria Oliveira</p>
+                  <p className="text-[10px] text-slate-500">4 camisas sociais</p>
+                  <div className="pt-1.5">
+                    <span className="inline-block w-full text-center text-[10px] font-bold bg-blue-50 text-blue-700 py-1 rounded">
+                      Mover p/ Passando ➔
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Coluna 2: Passando */}
+              <div className="bg-amber-50/50 rounded-2xl p-3 border border-amber-100/80 flex flex-col gap-2">
+                <div className="flex items-center justify-between text-xs font-bold text-amber-900 pb-1 border-b border-amber-100">
+                  <span className="flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5" /> Passando
+                  </span>
+                  <span className="bg-white text-amber-700 px-1.5 py-0.2 rounded text-[10px]">1</span>
+                </div>
+                <div className="bg-white p-2.5 rounded-xl border border-slate-100 shadow-2xs text-xs space-y-1">
+                  <div className="flex justify-between font-mono font-bold text-[11px] text-amber-600">
+                    <span>#000141</span>
+                    <span className="text-slate-400">R$ 31,00</span>
+                  </div>
+                  <p className="font-bold text-slate-800 truncate">Carlos Lima</p>
+                  <p className="text-[10px] text-slate-500">2 calças, 3 polos</p>
+                  <div className="pt-1.5">
+                    <span className="inline-block w-full text-center text-[10px] font-bold bg-amber-50 text-amber-700 py-1 rounded">
+                      Marcar como Pronto ➔
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Coluna 3: Pronto (Com botão WhatsApp) */}
+              <div className="bg-emerald-50/50 rounded-2xl p-3 border border-emerald-100/80 flex flex-col gap-2">
+                <div className="flex items-center justify-between text-xs font-bold text-emerald-900 pb-1 border-b border-emerald-100">
+                  <span className="flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Pronto
+                  </span>
+                  <span className="bg-white text-emerald-700 px-1.5 py-0.2 rounded text-[10px]">1</span>
+                </div>
+                <div className="bg-white p-2.5 rounded-xl border border-slate-100 shadow-2xs text-xs space-y-1">
+                  <div className="flex justify-between font-mono font-bold text-[11px] text-emerald-600">
+                    <span>#000140</span>
+                    <span className="text-slate-400">R$ 22,00</span>
+                  </div>
+                  <p className="font-bold text-slate-800 truncate">Fernanda Dias</p>
+                  <p className="text-[10px] text-slate-500">1 vestido de festa</p>
+                  <div className="pt-1.5 flex flex-col gap-1">
+                    <div className="bg-[#25D366] text-white font-bold py-1 px-2 rounded text-[10px] flex items-center justify-center gap-1">
+                      <MessageCircle className="w-3 h-3" />
+                      <span>Avisar no WhatsApp</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Coluna 4: Entregue */}
+              <div className="bg-slate-100/60 rounded-2xl p-3 border border-slate-200/80 flex flex-col gap-2">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-700 pb-1 border-b border-slate-200">
+                  <span className="flex items-center gap-1">
+                    <Truck className="w-3.5 h-3.5" /> Entregue
+                  </span>
+                  <span className="bg-white text-slate-700 px-1.5 py-0.2 rounded text-[10px]">1</span>
+                </div>
+                <div className="bg-white p-2.5 rounded-xl border border-slate-100 shadow-2xs text-xs space-y-1 opacity-75">
+                  <div className="flex justify-between font-mono font-bold text-[11px] text-slate-500">
+                    <span>#000139</span>
+                    <span className="text-slate-400">R$ 45,00</span>
+                  </div>
+                  <p className="font-bold text-slate-800 truncate">Paulo Santos</p>
+                  <p className="text-[10px] text-emerald-600 font-semibold">✓ Concluído e pago</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── SEÇÃO DE DIFERENCIAIS ────────────────────────────────────────── */}
-      <section id="diferenciais" className="py-20 px-4 sm:px-6 bg-white/70 border-y border-slate-100">
+      {/* ── SEÇÃO DE FUNCIONALIDADES ─────────────────────────────────────── */}
+      <section id="funcionalidades" className="py-20 px-4 sm:px-6 bg-white border-y border-slate-200/80">
         <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-2xl mx-auto mb-14">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-50 border border-sky-100 text-sky-700 text-xs font-semibold uppercase tracking-wider mb-3">
-              Por que escolher o PassaFácil?
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold uppercase tracking-wider mb-3">
+              Recursos Operacionais
             </div>
             <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-              Excelência e carinho em cada detalhe
+              Tudo o que sua passadoria precisa no dia a dia
             </h2>
             <p className="text-sm sm:text-base text-slate-500 mt-3 leading-relaxed">
-              Desenvolvemos um processo artesanal aliado à tecnologia para você nunca mais se preocupar com roupas amassadas.
+              Ferramentas planejadas para acelerar o atendimento, eliminar anotações em papel e manter suas roupas sempre organizadas.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {differentials.map((item, idx) => {
-              const Icon = item.icon;
+            {features.map((feat, idx) => {
+              const Icon = feat.icon;
               return (
                 <div
                   key={idx}
-                  className="group relative bg-white rounded-3xl p-6 border border-slate-100 shadow-sm hover:shadow-xl hover:border-slate-200 transition-all duration-300 flex flex-col justify-between"
+                  className="bg-slate-50/70 rounded-3xl p-6 border border-slate-200/80 hover:border-indigo-300 hover:bg-white hover:shadow-lg transition-all duration-200 flex flex-col justify-between"
                 >
                   <div>
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-slate-50 to-indigo-50/60 border border-slate-100 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
-                      <Icon className="w-6 h-6 text-indigo-600" />
+                    <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mb-4 text-indigo-600 shadow-2xs">
+                      <Icon className="w-6 h-6" />
                     </div>
-                    <span className={`inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-full ${item.bg} mb-2.5`}>
-                      {item.badge}
+                    <span className={`inline-block text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${feat.bg} mb-2`}>
+                      {feat.badge}
                     </span>
                     <h3 className="text-base font-bold text-slate-900 mb-2">
-                      {item.title}
+                      {feat.title}
                     </h3>
                     <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
-                      {item.desc}
+                      {feat.desc}
                     </p>
                   </div>
                 </div>
@@ -237,58 +333,96 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* ── TABELA DE PREÇOS / SERVIÇOS ──────────────────────────────────── */}
-      <section id="precos" className="py-20 px-4 sm:px-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center max-w-xl mx-auto mb-12">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-50 border border-violet-100 text-violet-700 text-xs font-semibold uppercase tracking-wider mb-3">
-              Tabela de Serviços & Peças
+      {/* ── SEÇÃO COMO FUNCIONA (3 PASSOS) ───────────────────────────────── */}
+      <section id="como-funciona" className="py-20 px-4 sm:px-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center max-w-xl mx-auto mb-14">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold uppercase tracking-wider mb-3">
+              Fluxo em 3 Etapas
             </div>
             <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-              Preços base transparentes
+              Como funciona o PassaFácil
             </h2>
             <p className="text-sm sm:text-base text-slate-500 mt-2">
-              Confira os valores médios para as peças mais solicitadas no nosso dia a dia.
+              Da entrada das peças ao aviso de retirada em menos de 1 minuto.
             </p>
           </div>
 
-          {/* Tabela de Preços */}
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-lg overflow-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+            {steps.map((st, i) => {
+              const Icon = st.icon;
+              return (
+                <div
+                  key={i}
+                  className="bg-white rounded-3xl p-7 border border-slate-200/80 shadow-xs relative flex flex-col justify-between"
+                >
+                  <div className="flex items-center justify-between mb-5">
+                    <span className="text-3xl font-black text-indigo-100 font-mono">
+                      {st.number}
+                    </span>
+                    <div className="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                      <Icon className="w-5 h-5" />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900 mb-2">
+                      {st.title}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
+                      {st.desc}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ── TABELA DE PREÇOS BASE ────────────────────────────────────────── */}
+      <section id="precos" className="py-20 px-4 sm:px-6 bg-slate-100/60 border-t border-slate-200/80">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center max-w-xl mx-auto mb-12">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-50 text-violet-700 text-xs font-bold uppercase tracking-wider mb-3">
+              Catálogo de Roupas
+            </div>
+            <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+              Tabela de Serviços & Peças
+            </h2>
+            <p className="text-sm sm:text-base text-slate-500 mt-2">
+              Valores base praticados para os itens mais frequentes.
+            </p>
+          </div>
+
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50/80 border-b border-slate-100 text-slate-500 text-xs uppercase tracking-wider">
+                <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 text-xs uppercase tracking-wider font-semibold">
                   <tr>
-                    <th className="py-4 px-6 font-semibold">Peça / Serviço</th>
-                    <th className="py-4 px-4 font-semibold">Unidade</th>
-                    <th className="py-4 px-4 font-semibold">Prazo Médio</th>
-                    <th className="py-4 px-6 text-right font-semibold">Valor Base</th>
+                    <th className="py-4 px-6">Peça / Serviço</th>
+                    <th className="py-4 px-4">Prazo Médio</th>
+                    <th className="py-4 px-6 text-right">Valor Unitário</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50">
+                <tbody className="divide-y divide-slate-100">
                   {commonPrices.map((item, i) => (
-                    <tr
-                      key={i}
-                      className={`hover:bg-slate-50/70 transition-colors ${
-                        item.highlight ? "bg-indigo-50/20" : ""
-                      }`}
-                    >
-                      <td className="py-4 px-6 font-medium text-slate-800 flex items-center gap-2.5">
-                        <Shirt className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+                    <tr key={i} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="py-4 px-6 font-semibold text-slate-800 flex items-center gap-2.5">
+                        <Shirt className="w-4 h-4 text-indigo-500 flex-shrink-0" />
                         <span>{item.piece}</span>
-                        {item.highlight && (
-                          <span className="hidden sm:inline-block text-[10px] bg-indigo-100 text-indigo-700 font-bold px-1.5 py-0.5 rounded">
+                        {item.popular && (
+                          <span className="text-[10px] bg-indigo-100 text-indigo-700 font-extrabold px-1.5 py-0.5 rounded">
                             Popular
                           </span>
                         )}
                       </td>
-                      <td className="py-4 px-4 text-slate-500 text-xs">{item.unit}</td>
                       <td className="py-4 px-4 text-slate-500 text-xs">
                         <span className="inline-flex items-center gap-1">
                           <Clock className="w-3.5 h-3.5 text-slate-400" />
                           {item.time}
                         </span>
                       </td>
-                      <td className="py-4 px-6 text-right font-bold text-slate-900 text-sm sm:text-base">
+                      <td className="py-4 px-6 text-right font-black text-slate-900 text-base">
                         {item.price}
                       </td>
                     </tr>
@@ -297,98 +431,47 @@ export function LandingPage() {
               </table>
             </div>
 
-            <div className="bg-slate-50/70 p-4 sm:p-5 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-2 text-xs text-slate-500 text-center sm:text-left">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                <span>Preços personalizáveis diretamente pelo painel administrativo do sistema.</span>
-              </div>
+            <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <span className="text-xs text-slate-500 text-center sm:text-left">
+                Valores configuráveis diretamente no menu <strong>Tabela de Preços</strong> do painel.
+              </span>
               <button
-                onClick={() => navigate("/entrar")}
-                className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-sm transition-all"
+                onClick={() => navigate("/painel")}
+                className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all"
               >
-                <span>Fazer um pedido</span>
-                <ArrowRight className="w-4 h-4" />
+                <span>Acessar no Painel</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── DEPOIMENTOS ──────────────────────────────────────────────────── */}
-      <section id="depoimentos" className="py-20 px-4 sm:px-6 bg-slate-50/50">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center max-w-xl mx-auto mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">
-              O que dizem nossos clientes
-            </h2>
-            <p className="text-sm text-slate-500 mt-2">
-              Quem experimenta a tranquilidade de não passar roupa nunca mais volta atrás.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {testimonials.map((t, idx) => (
-              <div
-                key={idx}
-                className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center gap-1 mb-3 text-amber-400">
-                    {Array.from({ length: t.stars }).map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-amber-400" />
-                    ))}
-                  </div>
-                  <p className="text-sm text-slate-600 leading-relaxed italic mb-5">
-                    "{t.text}"
-                  </p>
-                </div>
-                <div className="pt-3 border-t border-slate-50">
-                  <p className="text-sm font-bold text-slate-800">{t.name}</p>
-                  <p className="text-xs text-slate-400">{t.role}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── CTA FINAL ────────────────────────────────────────────────────── */}
-      <section className="py-20 px-4 sm:px-6 bg-gradient-to-br from-indigo-700 via-indigo-800 to-slate-900 text-white relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none opacity-20">
-          <div className="absolute -top-10 -right-10 w-80 h-80 bg-sky-400 rounded-full blur-3xl" />
-          <div className="absolute -bottom-10 -left-10 w-80 h-80 bg-violet-400 rounded-full blur-3xl" />
-        </div>
-
-        <div className="relative max-w-3xl mx-auto text-center">
-          <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center mx-auto mb-6">
-            <Sparkles className="w-7 h-7 text-sky-300" />
-          </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-4">
-            Pronto para ter suas roupas sempre alinhadas?
-          </h2>
-          <p className="text-indigo-200 text-base sm:text-lg mb-8 max-w-xl mx-auto">
-            Acesse o sistema agora, cadastre seus pedidos e acompanhe tudo com total facilidade e rapidez.
-          </p>
-          <button
-            onClick={() => navigate("/entrar")}
-            className="inline-flex items-center gap-2.5 bg-white text-indigo-700 hover:bg-slate-50 font-bold px-8 py-4 rounded-2xl text-base shadow-xl transition-all hover:scale-105 active:scale-100"
-          >
-            <span>Acessar o Painel</span>
-            <ArrowRight className="w-5 h-5" />
-          </button>
-        </div>
-      </section>
-
-      {/* ── FOOTER ───────────────────────────────────────────────────────── */}
-      <footer className="py-8 px-4 sm:px-6 bg-white border-t border-slate-100">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-indigo-600 flex items-center justify-center">
-              <Wind className="w-3.5 h-3.5 text-white" />
+      {/* ── FOOTER MODERNO COM STATUS DA API ──────────────────────────────── */}
+      <footer className="py-10 px-4 sm:px-6 bg-white border-t border-slate-200">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+          <div className="flex items-center gap-2.5">
+            <div className="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center">
+              <Wind className="w-3.5 h-3.5" />
             </div>
-            <span className="font-bold text-slate-700 text-sm">PassaFácil</span>
+            <span className="font-bold text-slate-800 text-sm">PassaFácil</span>
+            <span className="text-slate-400">· Gestão Operacional de Passadorias</span>
           </div>
-          <p>© {new Date().getFullYear()} PassaFácil — Gestão e cuidado com roupas.</p>
+
+          {/* Indicador verde de status da API solicitado */}
+          <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-200/80">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="font-semibold text-slate-700 text-[11px]">Servidor Conectado (API ativa)</span>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate("/painel")}
+              className="text-indigo-600 font-bold hover:underline"
+            >
+              Abrir Painel &rarr;
+            </button>
+          </div>
         </div>
       </footer>
     </div>

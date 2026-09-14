@@ -158,7 +158,7 @@ export function NewServicePage() {
 
       const novoPedido = await criarPedido(payload);
       addToast("Pedido registrado com sucesso!", "success");
-      navigate(`/servicos/${novoPedido.id}`);
+      navigate(`/painel/servicos/${novoPedido.id}`);
     } catch (err: any) {
       console.error("Erro ao criar pedido:", err);
       addToast(
@@ -181,7 +181,7 @@ export function NewServicePage() {
       <PageHeader
         title="Novo Pedido"
         breadcrumbs={[
-          { label: "Serviços", href: "/servicos" },
+          { label: "Pedidos", href: "/painel/pedidos" },
           { label: "Novo pedido" },
         ]}
       />
@@ -424,7 +424,7 @@ export function NewServicePage() {
             type="button"
             variant="outline"
             fullWidth
-            onClick={() => navigate("/servicos")}
+            onClick={() => navigate("/painel/pedidos")}
             disabled={isSubmitting}
           >
             Cancelar

@@ -1,25 +1,25 @@
 import React, { useState } from "react";
-import { Bell, Menu, LogOut } from "lucide-react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Bell, Menu, LogOut, Globe } from "lucide-react";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 
 const pageTitles: Record<string, string> = {
-  "/": "Painel Operacional",
-  "/pedidos": "Fluxo de Pedidos",
-  "/servicos": "Fluxo de Pedidos",
-  "/servicos/novo": "Nova Entrada de Roupas",
-  "/clientes": "Clientes",
-  "/clientes/novo": "Novo Cliente",
-  "/tabela-precos": "Tabela de Preços",
-  "/pagamentos": "Pagamentos",
-  "/relatorios": "Relatórios Operacionais",
-  "/configuracoes": "Configurações",
+  "/painel": "Painel Operacional",
+  "/painel/pedidos": "Fluxo de Pedidos",
+  "/painel/servicos": "Fluxo de Pedidos",
+  "/painel/servicos/novo": "Nova Entrada de Roupas",
+  "/painel/clientes": "Gestão de Clientes",
+  "/painel/clientes/novo": "Novo Cliente",
+  "/painel/tabela-precos": "Tabela de Preços",
+  "/painel/pagamentos": "Pagamentos",
+  "/painel/relatorios": "Relatórios Operacionais",
+  "/painel/configuracoes": "Configurações",
 };
 
 function getPageTitle(pathname: string): string {
   if (pageTitles[pathname]) return pageTitles[pathname];
-  if (pathname.startsWith("/clientes/")) return "Detalhes do Cliente";
-  if (pathname.startsWith("/servicos/")) return "Detalhes do Pedido";
+  if (pathname.startsWith("/painel/clientes/")) return "Detalhes do Cliente";
+  if (pathname.startsWith("/painel/servicos/")) return "Detalhes do Pedido";
   return "PassaFácil Operacional";
 }
 
@@ -61,6 +61,16 @@ export function Header({ onMenuClick }: HeaderProps) {
       </h1>
 
       <div className="flex-1" />
+
+      {/* Botão para alternar e voltar à Landing Page */}
+      <Link
+        to="/"
+        className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-indigo-600 hover:bg-slate-50 border border-slate-200/80 transition-colors mr-2"
+        title="Ver Landing Page pública"
+      >
+        <Globe className="w-3.5 h-3.5 text-slate-400" />
+        <span>Voltar ao Início</span>
+      </Link>
 
       {/* Botão Sair */}
       <button

@@ -408,7 +408,7 @@ export function DashboardPage() {
                           stage={stage}
                           isUpdating={updatingId === service.id}
                           onAdvance={handleAdvanceStatus}
-                          onNavigate={() => navigate(`/servicos/${service.id}`)}
+                          onNavigate={() => navigate(`/painel/servicos/${service.id}`)}
                         />
                       ))
                     )}
@@ -452,7 +452,7 @@ export function DashboardPage() {
                           stage={currentStage}
                           isUpdating={updatingId === service.id}
                           onAdvance={handleAdvanceStatus}
-                          onNavigate={() => navigate(`/servicos/${service.id}`)}
+                          onNavigate={() => navigate(`/painel/servicos/${service.id}`)}
                         />
                       ))}
                     </div>

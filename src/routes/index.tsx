@@ -5,6 +5,7 @@ import {
   Navigate,
 } from "react-router-dom";
 import { AppLayout } from "../layouts/AppLayout";
+import { LandingPage } from "../pages/Landing/LandingPage";
 import { LoginPage } from "../pages/Login/LoginPage";
 import { DashboardPage } from "../pages/Dashboard/DashboardPage";
 import { ClientsPage } from "../pages/Clients/ClientsPage";
@@ -20,7 +21,7 @@ import { SettingsPage } from "../pages/Settings/SettingsPage";
 import { useAuth } from "../hooks/useAuth";
 
 /**
- * Guarda de rota: redireciona para /login se não autenticado.
+ * Guarda de rota para o Painel: redireciona para /login se não autenticado.
  */
 function ProtectedLayout() {
   const { isAuthenticated } = useAuth();
@@ -37,13 +38,19 @@ function ProtectedLayout() {
 function PublicOnlyRoute({ element }: { element: React.ReactElement }) {
   const { isAuthenticated } = useAuth();
   if (isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/painel" replace />;
   }
   return element;
 }
 
 const router = createBrowserRouter([
-  // Login direto do sistema
+  // 1. Rota Raiz (/) -> Landing Page Pública Moderna
+  {
+    path: "/",
+    element: <LandingPage />,
+  },
+
+  // 2. Login
   {
     path: "/login",
     element: <PublicOnlyRoute element={<LoginPage />} />,
@@ -53,36 +60,44 @@ const router = createBrowserRouter([
     element: <Navigate to="/login" replace />,
   },
 
-  // Painel Interno de Gestão Operacional (Protegido)
+  // 3. Rota do Painel (/painel) -> Dashboard Operacional Protegido
   {
-    path: "/",
+    path: "/painel",
     element: <ProtectedLayout />,
     children: [
       { index: true, element: <DashboardPage /> },
-      { path: "app", element: <Navigate to="/" replace /> },
-      { path: "app/*", element: <Navigate to="/" replace /> },
-      { path: "dashboard", element: <Navigate to="/" replace /> },
 
-      // Módulo de Clientes
+      // Clientes
       { path: "clientes", element: <ClientsPage /> },
       { path: "clientes/novo", element: <NewClientPage /> },
       { path: "clientes/:id", element: <ClientDetailPage /> },
 
-      // Módulo de Pedidos e Comandas
+      // Pedidos / Fluxo de Produção
       { path: "pedidos", element: <ServicesPage /> },
       { path: "servicos", element: <ServicesPage /> },
       { path: "servicos/novo", element: <NewServicePage /> },
       { path: "servicos/:id", element: <ServiceDetailPage /> },
 
-      // Módulo de Tabela de Preços
+      // Tabela de Preços
       { path: "tabela-precos", element: <PriceTablePage /> },
-      { path: "precos", element: <Navigate to="/tabela-precos" replace /> },
+      { path: "precos", element: <Navigate to="/painel/tabela-precos" replace /> },
 
       // Financeiro e Relatórios
       { path: "pagamentos", element: <PaymentsPage /> },
       { path: "relatorios", element: <ReportsPage /> },
       { path: "configuracoes", element: <SettingsPage /> },
+      { path: "*", element: <Navigate to="/painel" replace /> },
     ],
+  },
+
+  // Compatibilidade com rota antiga /app -> /painel
+  {
+    path: "/app",
+    element: <Navigate to="/painel" replace />,
+  },
+  {
+    path: "/app/*",
+    element: <Navigate to="/painel" replace />,
   },
 
   // Fallback
