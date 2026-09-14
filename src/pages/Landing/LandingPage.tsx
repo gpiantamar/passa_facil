@@ -1,349 +1,350 @@
-import React, { useEffect, useRef, useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Wind,
-  ArrowRight,
-  Users,
-  ClipboardList,
-  BarChart3,
+  Sparkles,
   Shirt,
-  Star,
+  Clock,
+  Truck,
   CheckCircle2,
-  Zap,
+  ArrowRight,
   ShieldCheck,
+  Tag,
+  Star,
+  MessageCircle,
+  Zap,
 } from "lucide-react";
 
-// ─── Dados ────────────────────────────────────────────────────────────────────
+// ─── Dados de Diferenciais ───────────────────────────────────────────────────
 
-const features = [
+const differentials = [
   {
-    icon: Users,
-    title: "Gestão de Clientes",
-    desc: "Cadastre e acompanhe todos os seus clientes em um só lugar. Histórico completo de pedidos e contatos.",
-    color: "from-violet-500 to-indigo-600",
-    bg: "bg-violet-50",
-    text: "text-violet-700",
+    icon: Truck,
+    title: "Rapidez & Pontualidade",
+    desc: "Suas peças prontas e cheirosas no prazo prometido. Opção express com entrega em até 24h.",
+    badge: "Entrega em até 24h",
+    accent: "from-sky-500 to-blue-600",
+    bg: "bg-sky-50 text-sky-700",
   },
   {
-    icon: ClipboardList,
-    title: "Controle de Pedidos",
-    desc: "Gerencie cada pedido do recebimento até a entrega. Nunca perca o status de uma peça.",
-    color: "from-indigo-500 to-blue-600",
-    bg: "bg-indigo-50",
-    text: "text-indigo-700",
+    icon: Sparkles,
+    title: "Cuidado com Tecidos Nobres",
+    desc: "Temperatura e vapor ideais para linhos, sedas, camisas sociais e peças com bordados ou pedrarias.",
+    badge: "Acabamento de alfaiataria",
+    accent: "from-violet-500 to-indigo-600",
+    bg: "bg-violet-50 text-violet-700",
   },
   {
-    icon: Shirt,
-    title: "Catálogo de Serviços",
-    desc: "Defina preços por peça ou por quilo. Atualize o catálogo a qualquer momento.",
-    color: "from-sky-500 to-cyan-600",
-    bg: "bg-sky-50",
-    text: "text-sky-700",
+    icon: MessageCircle,
+    title: "Praticidade & WhatsApp",
+    desc: "Acompanhamento digital de cada pedido. Notificações diretas pelo WhatsApp assim que a roupa estiver pronta.",
+    badge: "Contato instantâneo",
+    accent: "from-emerald-500 to-teal-600",
+    bg: "bg-emerald-50 text-emerald-700",
   },
   {
-    icon: BarChart3,
-    title: "Relatórios e Insights",
-    desc: "Visualize o faturamento, serviços mais populares e tendências do seu negócio.",
-    color: "from-emerald-500 to-teal-600",
-    bg: "bg-emerald-50",
-    text: "text-emerald-700",
+    icon: Tag,
+    title: "Preço Justo & Transparente",
+    desc: "Tabela clara por peça ou pacote. Você sabe exatamente quanto vai pagar antes de fechar o pedido.",
+    badge: "Sem taxas surpresa",
+    accent: "from-indigo-500 to-purple-600",
+    bg: "bg-indigo-50 text-indigo-700",
   },
 ];
 
-const stats = [
-  { value: "100%", label: "Organizado" },
-  { value: "0", label: "Papel" },
-  { value: "24/7", label: "Disponível" },
-  { value: "∞", label: "Pedidos" },
+// ─── Tabela de Preços Base / Serviços Comuns ─────────────────────────────────
+
+const commonPrices = [
+  { piece: "Camisa Social / Linho", unit: "unidade", time: "24h", price: "R$ 7,50", highlight: true },
+  { piece: "Calça Jeans / Alfaiataria", unit: "unidade", time: "24h", price: "R$ 8,00", highlight: false },
+  { piece: "Camiseta Básica / Polo", unit: "unidade", time: "24h", price: "R$ 5,00", highlight: false },
+  { piece: "Vestido Simples / Midi", unit: "unidade", time: "24h a 48h", price: "R$ 14,00", highlight: false },
+  { piece: "Vestido de Festa / Tecido Fino", unit: "unidade", time: "48h", price: "R$ 22,00", highlight: true },
+  { piece: "Lençol / Colcha de Cama (Casal/Queen)", unit: "peça", time: "48h", price: "R$ 16,00", highlight: false },
+  { piece: "Paletó / Blazer", unit: "unidade", time: "48h", price: "R$ 18,00", highlight: false },
+  { piece: "Pacote Família (a partir de 20 peças)", unit: "lote", time: "48h", price: "Sob consulta", highlight: true },
 ];
+
+// ─── Depoimentos ─────────────────────────────────────────────────────────────
 
 const testimonials = [
   {
-    text: "Antes anotava tudo em papel e vivia perdendo pedido. Agora tudo fica registrado e sei exatamente o que está com cada cliente.",
-    author: "Ana Paula",
-    role: "Passadeira há 12 anos",
-    initial: "A",
-    color: "bg-violet-100 text-violet-700",
+    name: "Carolina Mendes",
+    role: "Advogada",
+    text: "Minhas camisas de trabalho nunca mais ficaram com marcas de ferro. O caimento é perfeito e a entrega sempre no dia certo!",
+    stars: 5,
   },
   {
-    text: "O sistema me ajudou a ver que estava cobrando barato em algumas peças. Aumentei o faturamento sem precisar de mais clientes.",
-    author: "Márcia Oliveira",
-    role: "Passadoria doméstica",
-    initial: "M",
-    color: "bg-indigo-100 text-indigo-700",
+    name: "Roberto Silveira",
+    role: "Empresário",
+    text: "Economizo horas do meu fim de semana. Avisam pelo WhatsApp quando está pronto e eu só passo para retirar. Recomendo muito.",
+    stars: 5,
   },
   {
-    text: "Minha mãe e eu usamos juntas. Consigo ver os pedidos dela do celular mesmo quando estou fora. Muito prático!",
-    author: "Fernanda Costa",
-    role: "Passadoria familiar",
-    initial: "F",
-    color: "bg-sky-100 text-sky-700",
+    name: "Mariana Alencar",
+    role: "Mãe e Designer",
+    text: "O cuidado com roupas infantis e vestidos de seda é excepcional. Além disso, o preço por peça é super justo e transparente.",
+    stars: 5,
   },
 ];
-
-const perks = [
-  "Sem limite de clientes",
-  "Acesso pelo celular ou computador",
-  "Dados sempre seguros",
-  "Atualizações automáticas",
-  "Sem mensalidade",
-  "Interface simples e rápida",
-];
-
-// ─── Componente de Contador Animado ──────────────────────────────────────────
-
-function AnimatedNumber({ value }: { value: string }) {
-  const [visible, setVisible] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const obs = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setVisible(true); },
-      { threshold: 0.5 }
-    );
-    if (ref.current) obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, []);
-
-  return (
-    <div
-      ref={ref}
-      className={`transition-all duration-700 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
-    >
-      {value}
-    </div>
-  );
-}
-
-// ─── Landing Page ─────────────────────────────────────────────────────────────
 
 export function LandingPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-white overflow-x-hidden">
-
-      {/* ── NAV ─────────────────────────────────────────────────────────── */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
-        <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-sky-50/40 text-slate-800 font-sans selection:bg-indigo-100 selection:text-indigo-800">
+      {/* ── NAVBAR ───────────────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-slate-100">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center shadow-sm shadow-indigo-200">
-              <Wind className="w-4 h-4 text-white" />
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 to-sky-500 flex items-center justify-center shadow-md shadow-indigo-200">
+              <Wind className="w-5 h-5 text-white" />
             </div>
-            <span className="text-base font-bold text-slate-800">PassaFácil</span>
+            <div>
+              <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-indigo-700 to-sky-600 bg-clip-text text-transparent">
+                PassaFácil
+              </span>
+              <span className="hidden sm:inline-block ml-2 text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
+                Passadoria
+              </span>
+            </div>
           </div>
-          <button
-            id="nav-entrar-btn"
-            onClick={() => navigate("/entrar")}
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-all duration-150 shadow-sm shadow-indigo-200 hover:shadow-indigo-300"
-          >
-            Entrar
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+
+          <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600">
+            <a href="#diferenciais" className="hover:text-indigo-600 transition-colors">
+              Diferenciais
+            </a>
+            <a href="#precos" className="hover:text-indigo-600 transition-colors">
+              Tabela de Preços
+            </a>
+            <a href="#depoimentos" className="hover:text-indigo-600 transition-colors">
+              Depoimentos
+            </a>
+          </nav>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/entrar")}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white text-sm font-semibold px-4 sm:px-5 py-2.5 rounded-xl shadow-md shadow-indigo-100 transition-all hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
+            >
+              <span>Acessar Sistema</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* ── HERO ─────────────────────────────────────────────────────────── */}
-      <section className="relative pt-32 pb-24 px-5 overflow-hidden">
-        {/* Background gradients */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-to-b from-indigo-50/80 to-transparent rounded-full blur-3xl" />
-          <div className="absolute top-20 right-0 w-72 h-72 bg-violet-100/60 rounded-full blur-3xl" />
-          <div className="absolute top-40 left-0 w-64 h-64 bg-sky-100/60 rounded-full blur-3xl" />
-        </div>
+      {/* ── HERO SECTION ─────────────────────────────────────────────────── */}
+      <section className="relative overflow-hidden pt-12 pb-20 sm:pt-20 sm:pb-28 px-4 sm:px-6">
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-gradient-to-tr from-indigo-200/40 via-sky-200/30 to-violet-200/20 rounded-full blur-3xl pointer-events-none -z-10" />
 
-        <div className="relative max-w-4xl mx-auto text-center">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 text-xs font-semibold px-3.5 py-1.5 rounded-full border border-indigo-100 mb-6">
-            <Zap className="w-3.5 h-3.5" />
-            Sistema completo para passadeiras
+        <div className="max-w-4xl mx-auto text-center">
+          {/* Badge superior */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs sm:text-sm font-medium mb-6 shadow-sm">
+            <Sparkles className="w-4 h-4 text-indigo-600" />
+            <span>Passadoria profissional e sob medida</span>
           </div>
 
-          {/* Headline */}
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 leading-[1.1] tracking-tight mb-6">
-            Sua passadoria{" "}
-            <span className="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-              organizada
+          {/* Chamada principal exigida */}
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.15] mb-6">
+            Suas roupas impecáveis{" "}
+            <span className="bg-gradient-to-r from-indigo-600 via-sky-600 to-violet-600 bg-clip-text text-transparent">
+              sem você perder tempo
             </span>
-            <br />
-            do jeito que merece
           </h1>
 
-          {/* Subheadline */}
-          <p className="text-lg sm:text-xl text-slate-500 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Chega de papel, caderno e confusão. Gerencie clientes, pedidos e serviços em um sistema
-            simples, rápido e feito para quem trabalha com passadoria.
+          <p className="text-base sm:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed mb-9">
+            Deixe o ferro e a tábua de lado. Cuidamos das suas peças com carinho, vapor profissional e acabamento impecável para você vestir o seu melhor todos os dias.
           </p>
 
-          {/* CTA */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          {/* Botões de Ação */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-12">
             <button
-              id="hero-entrar-btn"
               onClick={() => navigate("/entrar")}
-              className="flex items-center gap-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-4 rounded-2xl text-base transition-all duration-200 shadow-lg shadow-indigo-200 hover:shadow-xl hover:shadow-indigo-300 hover:-translate-y-0.5 active:translate-y-0"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-7 py-3.5 rounded-2xl text-base shadow-lg shadow-indigo-200 hover:shadow-xl transition-all hover:-translate-y-0.5 active:translate-y-0"
             >
-              Começar agora — é gratuito
-              <ArrowRight className="w-4.5 h-4.5" />
+              <span>Entrar no Sistema</span>
+              <ArrowRight className="w-5 h-5" />
             </button>
-            <span className="text-sm text-slate-400 flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-emerald-500" />
-              Acesso seguro com senha
-            </span>
+            <a
+              href="#precos"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-700 font-semibold px-6 py-3.5 rounded-2xl text-base border border-slate-200/80 shadow-sm transition-all"
+            >
+              <Tag className="w-4 h-4 text-slate-400" />
+              <span>Ver Tabela de Preços</span>
+            </a>
           </div>
-        </div>
 
-        {/* App preview card */}
-        <div className="relative max-w-3xl mx-auto mt-16">
-          <div className="bg-white rounded-3xl shadow-2xl shadow-slate-200 border border-slate-100 overflow-hidden">
-            {/* Browser bar */}
-            <div className="flex items-center gap-1.5 px-4 py-3 bg-slate-50 border-b border-slate-100">
-              <div className="w-3 h-3 rounded-full bg-red-400" />
-              <div className="w-3 h-3 rounded-full bg-amber-400" />
-              <div className="w-3 h-3 rounded-full bg-emerald-400" />
-              <div className="flex-1 mx-3 h-5 bg-white border border-slate-200 rounded-lg flex items-center px-3">
-                <span className="text-xs text-slate-400">passafacil.vercel.app</span>
-              </div>
+          {/* 3 Diferenciais Rápidos / Badges do Hero */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto">
+            <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white/80 border border-slate-100 shadow-sm">
+              <Truck className="w-4 h-4 text-sky-600 flex-shrink-0" />
+              <span className="text-xs sm:text-sm font-semibold text-slate-700">Entrega em até 24h</span>
             </div>
-            {/* Dashboard mockup */}
-            <div className="p-5 bg-slate-50 grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[
-                { label: "Pedidos Hoje", value: "12", color: "text-indigo-600", bg: "bg-indigo-50" },
-                { label: "Prontos", value: "8", color: "text-emerald-600", bg: "bg-emerald-50" },
-                { label: "Em Andamento", value: "4", color: "text-amber-600", bg: "bg-amber-50" },
-                { label: "Clientes", value: "47", color: "text-violet-600", bg: "bg-violet-50" },
-              ].map((s) => (
-                <div key={s.label} className="bg-white rounded-2xl p-3.5 border border-slate-100 shadow-sm">
-                  <p className="text-xs text-slate-500 mb-1">{s.label}</p>
-                  <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-                </div>
-              ))}
+            <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white/80 border border-slate-100 shadow-sm">
+              <Sparkles className="w-4 h-4 text-violet-600 flex-shrink-0" />
+              <span className="text-xs sm:text-sm font-semibold text-slate-700">Cuidado profissional</span>
             </div>
-            <div className="p-5 pt-0 bg-slate-50 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {["Maria Silva — 3 camisas", "João Costa — 2 lençóis", "Ana Lima — 1 calça"].map((item, i) => (
-                <div key={i} className="bg-white rounded-xl px-4 py-3 border border-slate-100 shadow-sm flex items-center justify-between">
-                  <span className="text-sm text-slate-700 font-medium">{item}</span>
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${i === 0 ? "bg-emerald-50 text-emerald-700" : i === 1 ? "bg-amber-50 text-amber-700" : "bg-indigo-50 text-indigo-700"}`}>
-                    {i === 0 ? "Pronto" : i === 1 ? "Passando" : "Recebido"}
-                  </span>
-                </div>
-              ))}
+            <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white/80 border border-slate-100 shadow-sm">
+              <Tag className="w-4 h-4 text-indigo-600 flex-shrink-0" />
+              <span className="text-xs sm:text-sm font-semibold text-slate-700">Preço justo por peça</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── STATS ─────────────────────────────────────────────────────────── */}
-      <section className="py-16 bg-gradient-to-r from-indigo-600 to-violet-600">
-        <div className="max-w-4xl mx-auto px-5 grid grid-cols-2 sm:grid-cols-4 gap-8 text-center text-white">
-          {stats.map((s) => (
-            <div key={s.label}>
-              <div className="text-4xl font-extrabold mb-1">
-                <AnimatedNumber value={s.value} />
-              </div>
-              <p className="text-indigo-200 text-sm font-medium">{s.label}</p>
+      {/* ── SEÇÃO DE DIFERENCIAIS ────────────────────────────────────────── */}
+      <section id="diferenciais" className="py-20 px-4 sm:px-6 bg-white/70 border-y border-slate-100">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center max-w-2xl mx-auto mb-14">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-50 border border-sky-100 text-sky-700 text-xs font-semibold uppercase tracking-wider mb-3">
+              Por que escolher o PassaFácil?
             </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── FEATURES ─────────────────────────────────────────────────────── */}
-      <section className="py-24 px-5">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-4">
-              Tudo que sua passadoria precisa
+            <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+              Excelência e carinho em cada detalhe
             </h2>
-            <p className="text-slate-500 text-lg max-w-xl mx-auto">
-              Simples o suficiente para usar no dia a dia, completo o suficiente para crescer.
+            <p className="text-sm sm:text-base text-slate-500 mt-3 leading-relaxed">
+              Desenvolvemos um processo artesanal aliado à tecnologia para você nunca mais se preocupar com roupas amassadas.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {features.map((f) => (
-              <div
-                key={f.title}
-                className="group bg-white border border-slate-100 rounded-3xl p-7 hover:shadow-xl hover:shadow-slate-100 hover:-translate-y-1 transition-all duration-300"
-              >
-                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${f.color} flex items-center justify-center mb-5 shadow-sm group-hover:scale-110 transition-transform duration-300`}>
-                  <f.icon className="w-5.5 h-5.5 text-white" />
-                </div>
-                <h3 className="text-lg font-bold text-slate-800 mb-2">{f.title}</h3>
-                <p className="text-slate-500 text-sm leading-relaxed">{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── PERKS ─────────────────────────────────────────────────────────── */}
-      <section className="py-20 px-5 bg-slate-50">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8 sm:p-12">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 items-center">
-              <div>
-                <h2 className="text-3xl font-extrabold text-slate-900 mb-4">
-                  Feito para quem{" "}
-                  <span className="text-indigo-600">trabalha sério</span>
-                </h2>
-                <p className="text-slate-500 leading-relaxed mb-6">
-                  Desenvolvido pensando na rotina real de uma passadoria. Sem complicação, sem custo, sem papel.
-                </p>
-                <button
-                  id="perks-entrar-btn"
-                  onClick={() => navigate("/entrar")}
-                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-3 rounded-xl text-sm transition-all duration-150 shadow-sm shadow-indigo-200"
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {differentials.map((item, idx) => {
+              const Icon = item.icon;
+              return (
+                <div
+                  key={idx}
+                  className="group relative bg-white rounded-3xl p-6 border border-slate-100 shadow-sm hover:shadow-xl hover:border-slate-200 transition-all duration-300 flex flex-col justify-between"
                 >
-                  Acessar o sistema
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="grid grid-cols-1 gap-2.5">
-                {perks.map((p) => (
-                  <div key={p} className="flex items-center gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-indigo-600 flex-shrink-0" />
-                    <span className="text-sm text-slate-700 font-medium">{p}</span>
+                  <div>
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-slate-50 to-indigo-50/60 border border-slate-100 flex items-center justify-center mb-5 group-hover:scale-105 transition-transform">
+                      <Icon className="w-6 h-6 text-indigo-600" />
+                    </div>
+                    <span className={`inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-full ${item.bg} mb-2.5`}>
+                      {item.badge}
+                    </span>
+                    <h3 className="text-base font-bold text-slate-900 mb-2">
+                      {item.title}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
+                      {item.desc}
+                    </p>
                   </div>
-                ))}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ── TABELA DE PREÇOS / SERVIÇOS ──────────────────────────────────── */}
+      <section id="precos" className="py-20 px-4 sm:px-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center max-w-xl mx-auto mb-12">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-50 border border-violet-100 text-violet-700 text-xs font-semibold uppercase tracking-wider mb-3">
+              Tabela de Serviços & Peças
+            </div>
+            <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+              Preços base transparentes
+            </h2>
+            <p className="text-sm sm:text-base text-slate-500 mt-2">
+              Confira os valores médios para as peças mais solicitadas no nosso dia a dia.
+            </p>
+          </div>
+
+          {/* Tabela de Preços */}
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-slate-50/80 border-b border-slate-100 text-slate-500 text-xs uppercase tracking-wider">
+                  <tr>
+                    <th className="py-4 px-6 font-semibold">Peça / Serviço</th>
+                    <th className="py-4 px-4 font-semibold">Unidade</th>
+                    <th className="py-4 px-4 font-semibold">Prazo Médio</th>
+                    <th className="py-4 px-6 text-right font-semibold">Valor Base</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {commonPrices.map((item, i) => (
+                    <tr
+                      key={i}
+                      className={`hover:bg-slate-50/70 transition-colors ${
+                        item.highlight ? "bg-indigo-50/20" : ""
+                      }`}
+                    >
+                      <td className="py-4 px-6 font-medium text-slate-800 flex items-center gap-2.5">
+                        <Shirt className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+                        <span>{item.piece}</span>
+                        {item.highlight && (
+                          <span className="hidden sm:inline-block text-[10px] bg-indigo-100 text-indigo-700 font-bold px-1.5 py-0.5 rounded">
+                            Popular
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-4 px-4 text-slate-500 text-xs">{item.unit}</td>
+                      <td className="py-4 px-4 text-slate-500 text-xs">
+                        <span className="inline-flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5 text-slate-400" />
+                          {item.time}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 text-right font-bold text-slate-900 text-sm sm:text-base">
+                        {item.price}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="bg-slate-50/70 p-4 sm:p-5 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-2 text-xs text-slate-500 text-center sm:text-left">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                <span>Preços personalizáveis diretamente pelo painel administrativo do sistema.</span>
               </div>
+              <button
+                onClick={() => navigate("/entrar")}
+                className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-sm transition-all"
+              >
+                <span>Fazer um pedido</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── TESTIMONIALS ─────────────────────────────────────────────────── */}
-      <section className="py-24 px-5">
+      {/* ── DEPOIMENTOS ──────────────────────────────────────────────────── */}
+      <section id="depoimentos" className="py-20 px-4 sm:px-6 bg-slate-50/50">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <div className="inline-flex items-center gap-1 mb-4">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="w-5 h-5 fill-amber-400 text-amber-400" />
-              ))}
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900">
-              Quem usa, aprova
+          <div className="text-center max-w-xl mx-auto mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">
+              O que dizem nossos clientes
             </h2>
+            <p className="text-sm text-slate-500 mt-2">
+              Quem experimenta a tranquilidade de não passar roupa nunca mais volta atrás.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-            {testimonials.map((t) => (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {testimonials.map((t, idx) => (
               <div
-                key={t.author}
-                className="bg-white border border-slate-100 rounded-3xl p-6 hover:shadow-lg hover:shadow-slate-100 transition-all duration-300"
+                key={idx}
+                className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col justify-between"
               >
-                <div className="flex mb-3">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
-                  ))}
+                <div>
+                  <div className="flex items-center gap-1 mb-3 text-amber-400">
+                    {Array.from({ length: t.stars }).map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-amber-400" />
+                    ))}
+                  </div>
+                  <p className="text-sm text-slate-600 leading-relaxed italic mb-5">
+                    "{t.text}"
+                  </p>
                 </div>
-                <p className="text-slate-600 text-sm leading-relaxed mb-5 italic">"{t.text}"</p>
-                <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-full ${t.color} flex items-center justify-center font-bold text-sm flex-shrink-0`}>
-                    {t.initial}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-800">{t.author}</p>
-                    <p className="text-xs text-slate-400">{t.role}</p>
-                  </div>
+                <div className="pt-3 border-t border-slate-50">
+                  <p className="text-sm font-bold text-slate-800">{t.name}</p>
+                  <p className="text-xs text-slate-400">{t.role}</p>
                 </div>
               </div>
             ))}
@@ -352,44 +353,42 @@ export function LandingPage() {
       </section>
 
       {/* ── CTA FINAL ────────────────────────────────────────────────────── */}
-      <section className="py-24 px-5 bg-gradient-to-br from-indigo-600 via-violet-600 to-indigo-800 relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
+      <section className="py-20 px-4 sm:px-6 bg-gradient-to-br from-indigo-700 via-indigo-800 to-slate-900 text-white relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none opacity-20">
+          <div className="absolute -top-10 -right-10 w-80 h-80 bg-sky-400 rounded-full blur-3xl" />
+          <div className="absolute -bottom-10 -left-10 w-80 h-80 bg-violet-400 rounded-full blur-3xl" />
         </div>
-        <div className="relative max-w-2xl mx-auto text-center text-white">
-          <div className="w-16 h-16 rounded-3xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center mx-auto mb-6">
-            <Wind className="w-7 h-7 text-white" />
+
+        <div className="relative max-w-3xl mx-auto text-center">
+          <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center mx-auto mb-6">
+            <Sparkles className="w-7 h-7 text-sky-300" />
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold mb-4">
-            Pronto para organizar sua passadoria?
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-4">
+            Pronto para ter suas roupas sempre alinhadas?
           </h2>
-          <p className="text-indigo-200 text-lg mb-10 leading-relaxed">
-            Acesse agora e comece a registrar seus pedidos. Simples assim.
+          <p className="text-indigo-200 text-base sm:text-lg mb-8 max-w-xl mx-auto">
+            Acesse o sistema agora, cadastre seus pedidos e acompanhe tudo com total facilidade e rapidez.
           </p>
           <button
-            id="final-entrar-btn"
             onClick={() => navigate("/entrar")}
-            className="inline-flex items-center gap-2.5 bg-white text-indigo-700 font-bold px-8 py-4 rounded-2xl text-base hover:bg-indigo-50 transition-all duration-200 shadow-xl hover:shadow-2xl hover:-translate-y-0.5 active:translate-y-0"
+            className="inline-flex items-center gap-2.5 bg-white text-indigo-700 hover:bg-slate-50 font-bold px-8 py-4 rounded-2xl text-base shadow-xl transition-all hover:scale-105 active:scale-100"
           >
-            Entrar no sistema
-            <ArrowRight className="w-4.5 h-4.5" />
+            <span>Acessar o Painel</span>
+            <ArrowRight className="w-5 h-5" />
           </button>
         </div>
       </section>
 
       {/* ── FOOTER ───────────────────────────────────────────────────────── */}
-      <footer className="py-8 px-5 border-t border-slate-100 bg-white">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+      <footer className="py-8 px-4 sm:px-6 bg-white border-t border-slate-100">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-lg bg-indigo-600 flex items-center justify-center">
               <Wind className="w-3.5 h-3.5 text-white" />
             </div>
-            <span className="text-sm font-semibold text-slate-700">PassaFácil</span>
+            <span className="font-bold text-slate-700 text-sm">PassaFácil</span>
           </div>
-          <p className="text-xs text-slate-400">
-            © {new Date().getFullYear()} PassaFácil — Gestão de passadoria simples e eficiente.
-          </p>
+          <p>© {new Date().getFullYear()} PassaFácil — Gestão e cuidado com roupas.</p>
         </div>
       </footer>
     </div>

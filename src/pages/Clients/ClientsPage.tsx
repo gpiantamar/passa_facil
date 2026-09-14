@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, Plus, Phone, Clock, DollarSign, AlertCircle, RefreshCw } from "lucide-react";
+import { Users, Plus, Phone, Clock, DollarSign, AlertCircle, RefreshCw, MessageCircle } from "lucide-react";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { SearchInput } from "../../components/ui/SearchInput";
 import { Button } from "../../components/ui/Button";
 import { EmptyState } from "../../components/ui/EmptyState";
-import { Loading } from "../../components/ui/Loading";
+import { TableSkeleton } from "../../components/ui/Loading";
 import { getClientes } from "../../services/api.js";
 import type { Client } from "../../types";
 import { formatCurrency, formatDate, formatPhone } from "../../utils/formatters";
@@ -41,7 +41,7 @@ export function ClientsPage() {
       console.error("Erro ao carregar clientes:", err);
       setError(
         err?.message ||
-          "Não foi possível conectar ao servidor. Verifique se o back-end está rodando em http://localhost:3333."
+          "Não foi possível conectar ao servidor. Verifique a conexão com o banco de dados."
       );
     } finally {
       setLoading(false);
@@ -66,7 +66,7 @@ export function ClientsPage() {
     <div className="animate-fade-in">
       <PageHeader
         title="Clientes"
-        subtitle="Gerencie seus clientes e consulte o histórico."
+        subtitle="Gerencie seus clientes e consulte o histórico de pedidos."
         actions={
           <Button
             onClick={() => navigate("/clientes/novo")}
@@ -77,7 +77,7 @@ export function ClientsPage() {
         }
       />
 
-      {/* Search */}
+      {/* Busca */}
       <SearchInput
         value={search}
         onChange={setSearch}
@@ -91,7 +91,7 @@ export function ClientsPage() {
           <div className="flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
             <div>
-              <p className="font-semibold text-sm">Falha na conexão com a API</p>
+              <p className="font-semibold text-sm">Falha na conexão com a API de clientes</p>
               <p className="text-xs text-red-700 mt-0.5">{error}</p>
             </div>
           </div>
@@ -108,15 +108,15 @@ export function ClientsPage() {
       )}
 
       {loading ? (
-        <Loading />
+        <TableSkeleton rows={6} cols={5} />
       ) : filteredClients.length === 0 ? (
         <EmptyState
           icon={Users}
           title="Nenhum cliente encontrado."
           description={
             debouncedSearch
-              ? `Nenhum resultado para "${debouncedSearch}".`
-              : "Comece cadastrando seu primeiro cliente."
+              ? `Nenhum resultado encontrado para "${debouncedSearch}".`
+              : "Comece cadastrando seu primeiro cliente no sistema."
           }
           action={
             !debouncedSearch ? (
@@ -125,7 +125,7 @@ export function ClientsPage() {
                 leftIcon={<Plus className="w-4 h-4" />}
                 size="sm"
               >
-                Novo cliente
+                Cadastrar primeiro cliente
               </Button>
             ) : undefined
           }
@@ -133,99 +133,111 @@ export function ClientsPage() {
       ) : (
         <>
           {/* Desktop table */}
-          <div className="hidden sm:block bg-white rounded-2xl border border-slate-100 shadow-sm overflow-x-auto w-full">
+          <div className="hidden sm:block bg-white rounded-3xl border border-slate-100 shadow-sm overflow-x-auto w-full">
             <table className="w-full text-sm min-w-[550px]">
               <thead className="bg-slate-50 border-b border-slate-100">
                 <tr>
-                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-500">Cliente</th>
-                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-500">Telefone</th>
-                  <th className="px-5 py-3 text-right text-xs font-medium text-slate-500">Serviços</th>
-                  <th className="px-5 py-3 text-right text-xs font-medium text-slate-500">Pendente</th>
-                  <th className="px-5 py-3 text-right text-xs font-medium text-slate-500">Último serviço</th>
+                  <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500">Cliente</th>
+                  <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500">Telefone / WhatsApp</th>
+                  <th className="px-5 py-3 text-right text-xs font-semibold text-slate-500">Pedidos</th>
+                  <th className="px-5 py-3 text-right text-xs font-semibold text-slate-500">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {filteredClients.map((client) => (
-                  <tr
-                    key={client.id}
-                    onClick={() => navigate(`/clientes/${client.id}`)}
-                    className="hover:bg-slate-50 cursor-pointer transition-colors"
-                  >
-                    <td className="px-5 py-4">
-                      <p className="font-semibold text-slate-800">{client.name}</p>
-                      {client.address && (
-                        <p className="text-xs text-slate-400 mt-0.5">{client.address}</p>
-                      )}
-                    </td>
-                    <td className="px-5 py-4 text-slate-500">
-                      {formatPhone(client.phone)}
-                    </td>
-                    <td className="px-5 py-4 text-right text-slate-700">
-                      {client.totalServices}
-                    </td>
-                    <td className="px-5 py-4 text-right">
-                      <span
-                        className={
-                          client.pendingAmount > 0
-                            ? "text-red-600 font-semibold"
-                            : "text-slate-500"
-                        }
-                      >
-                        {client.pendingAmount > 0
-                          ? formatCurrency(client.pendingAmount)
-                          : "—"}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4 text-right text-slate-500 text-xs">
-                      {client.lastServiceDate
-                        ? formatDate(client.lastServiceDate)
-                        : "—"}
-                    </td>
-                  </tr>
-                ))}
+                {filteredClients.map((client) => {
+                  const cleanPhone = client.phone.replace(/\D/g, "");
+                  const waUrl = cleanPhone
+                    ? `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(`Olá, ${client.name}! Tudo bem?`)}`
+                    : null;
+
+                  return (
+                    <tr
+                      key={client.id}
+                      onClick={() => navigate(`/clientes/${client.id}`)}
+                      className="hover:bg-slate-50/80 cursor-pointer transition-colors"
+                    >
+                      <td className="px-5 py-4">
+                        <p className="font-semibold text-slate-800">{client.name}</p>
+                        {client.address && (
+                          <p className="text-xs text-slate-400 mt-0.5">{client.address}</p>
+                        )}
+                      </td>
+                      <td className="px-5 py-4 text-slate-600">
+                        {formatPhone(client.phone)}
+                      </td>
+                      <td className="px-5 py-4 text-right text-slate-700 font-medium">
+                        {client.totalServices}
+                      </td>
+                      <td className="px-5 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                          {waUrl && (
+                            <a
+                              href={waUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title="Conversar no WhatsApp"
+                              className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/70 px-2.5 py-1.5 rounded-xl transition-colors"
+                            >
+                              <MessageCircle className="w-3.5 h-3.5" />
+                              <span>WhatsApp</span>
+                            </a>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
 
           {/* Mobile cards */}
           <div className="sm:hidden flex flex-col gap-3">
-            {filteredClients.map((client) => (
-              <button
-                key={client.id}
-                onClick={() => navigate(`/clientes/${client.id}`)}
-                className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 text-left w-full hover:shadow-md transition-shadow cursor-pointer"
-              >
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div>
-                    <p className="font-semibold text-slate-800 truncate">{client.name}</p>
-                    {client.address && (
-                      <p className="text-xs text-slate-400 mt-0.5">{client.address}</p>
+            {filteredClients.map((client) => {
+              const cleanPhone = client.phone.replace(/\D/g, "");
+              const waUrl = cleanPhone
+                ? `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(`Olá, ${client.name}! Tudo bem?`)}`
+                : null;
+
+              return (
+                <div
+                  key={client.id}
+                  onClick={() => navigate(`/clientes/${client.id}`)}
+                  className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 text-left w-full hover:shadow-md transition-shadow cursor-pointer"
+                >
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div>
+                      <p className="font-bold text-slate-800 truncate">{client.name}</p>
+                      {client.address && (
+                        <p className="text-xs text-slate-400 mt-0.5">{client.address}</p>
+                      )}
+                    </div>
+                    {waUrl && (
+                      <a
+                        href={waUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center flex-shrink-0"
+                        title="Abrir WhatsApp"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                      </a>
                     )}
                   </div>
-                  {client.pendingAmount > 0 && (
-                    <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded-full flex-shrink-0">
-                      {formatCurrency(client.pendingAmount)} pendente
+                  <div className="flex items-center gap-x-4 gap-y-1.5 flex-wrap text-xs text-slate-500 pt-2 border-t border-slate-50">
+                    <span className="inline-flex items-center gap-1">
+                      <Phone className="w-3.5 h-3.5 text-slate-400" />
+                      <span>{formatPhone(client.phone)}</span>
                     </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-x-4 gap-y-1.5 flex-wrap text-xs text-slate-500">
-                  <span className="inline-flex items-center gap-1 flex-shrink-0">
-                    <Phone className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                    <span>{formatPhone(client.phone)}</span>
-                  </span>
-                  <span className="inline-flex items-center gap-1 flex-shrink-0">
-                    <Clock className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                    <span>{client.totalServices} serviços</span>
-                  </span>
-                  {client.lastServiceDate && (
-                    <span className="inline-flex items-center gap-1 flex-shrink-0">
-                      <DollarSign className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                      <span>{formatDate(client.lastServiceDate)}</span>
+                    <span className="inline-flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5 text-slate-400" />
+                      <span>{client.totalServices} pedidos</span>
                     </span>
-                  )}
+                  </div>
                 </div>
-              </button>
-            ))}
+              );
+            })}
           </div>
         </>
       )}

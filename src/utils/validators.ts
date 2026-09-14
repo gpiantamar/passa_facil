@@ -7,14 +7,19 @@ import { z } from "zod";
 export const newClientSchema = z.object({
   name: z
     .string()
+    .trim()
     .min(2, "Nome deve ter ao menos 2 caracteres")
     .max(100, "Nome muito longo"),
   phone: z
     .string()
-    .min(10, "Telefone inválido")
-    .max(20, "Telefone inválido"),
-  address: z.string().max(200, "Endereço muito longo").optional(),
-  notes: z.string().max(500, "Observações muito longas").optional(),
+    .trim()
+    .min(1, "Telefone é obrigatório")
+    .refine((val) => {
+      const digits = val.replace(/\D/g, "");
+      return digits.length >= 10 && digits.length <= 11;
+    }, "Digite um telefone válido com DDD (ex: (11) 98765-4321)"),
+  address: z.string().trim().max(200, "Endereço muito longo").optional(),
+  notes: z.string().trim().max(500, "Observações muito longas").optional(),
 });
 
 export type NewClientSchema = z.infer<typeof newClientSchema>;
@@ -46,7 +51,7 @@ export const newServiceSchema = z.object({
   notes: z.string().max(500).optional(),
   items: z
     .array(serviceItemSchema)
-    .min(1, "Adicione ao menos uma peça"),
+    .min(1, "Adicione ao menos uma peça ao pedido"),
 });
 
 export type NewServiceSchema = z.infer<typeof newServiceSchema>;
@@ -74,14 +79,14 @@ export type NewPaymentSchema = z.infer<typeof newPaymentSchema>;
 // =============================================
 
 export const profileSchema = z.object({
-  name: z.string().min(2, "Nome deve ter ao menos 2 caracteres"),
-  email: z.string().email("Email inválido"),
+  name: z.string().trim().min(2, "Nome deve ter ao menos 2 caracteres"),
+  email: z.string().trim().email("Email inválido"),
 });
 
 export type ProfileSchema = z.infer<typeof profileSchema>;
 
 export const clothingTypeSchema = z.object({
-  name: z.string().min(1, "Informe o nome"),
+  name: z.string().trim().min(1, "Informe o nome"),
   pricePerUnit: z
     .number()
     .min(0.01, "Preço deve ser maior que zero"),

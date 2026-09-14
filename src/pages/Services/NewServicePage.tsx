@@ -15,17 +15,23 @@ import { formatCurrency, todayISO } from "../../utils/formatters";
 import { useToastContext } from "../../lib/toastContext";
 
 interface ClienteItem {
-  id: number;
+  id: string | number;
   nome: string;
   telefone: string;
 }
 
 interface ServicoItem {
-  id: number;
+  id: string | number;
   nome: string;
   preco: number;
   unidade: string;
 }
+
+const safeNumber = (val: any): number => {
+  if (val === null || val === undefined || val === "") return 0;
+  const num = Number(val);
+  return isNaN(num) ? 0 : num;
+};
 
 export function NewServicePage() {
   const navigate = useNavigate();
@@ -51,7 +57,7 @@ export function NewServicePage() {
       console.error("Erro ao carregar dados iniciais:", err);
       setLoadError(
         err?.message ||
-          "Não foi possível carregar clientes e serviços. Verifique se o servidor está rodando em http://localhost:3333."
+          "Não foi possível carregar clientes e serviços. Verifique a conexão com o servidor."
       );
     } finally {
       setLoadingData(false);
@@ -94,16 +100,17 @@ export function NewServicePage() {
 
   const watchedItems = watch("items");
 
-  // Cálculo dinâmico do total e de peças
-  const total = (watchedItems || []).reduce(
-    (sum, item) => sum + (Number(item?.quantity) || 0) * (Number(item?.pricePerUnit) || 0),
-    0
-  );
+  // Cálculo dinâmico seguro do total e de peças blindado contra NaN
+  const total = (watchedItems || []).reduce((sum, item) => {
+    const q = safeNumber(item?.quantity);
+    const p = safeNumber(item?.pricePerUnit);
+    return sum + q * p;
+  }, 0);
 
-  const totalPieces = (watchedItems || []).reduce(
-    (sum, item) => sum + (Number(item?.quantity) || 0),
-    0
-  );
+  const totalPieces = (watchedItems || []).reduce((sum, item) => {
+    const q = safeNumber(item?.quantity);
+    return sum + q;
+  }, 0);
 
   const clientOptions = clients.map((c) => ({
     value: String(c.id),
@@ -112,30 +119,40 @@ export function NewServicePage() {
 
   const serviceOptions = services.map((s) => ({
     value: String(s.id),
-    label: `${s.nome} — ${formatCurrency(s.preco)} / ${s.unidade || "un"}`,
+    label: `${s.nome} — ${formatCurrency(safeNumber(s.preco))} / ${s.unidade || "un"}`,
   }));
 
   const handleServiceChange = (index: number, servicoIdStr: string) => {
-    const servicoId = parseInt(servicoIdStr, 10);
-    const found = services.find((s) => s.id === servicoId);
+    const found = services.find((s) => String(s.id) === String(servicoIdStr));
     if (found) {
       setValue(`items.${index}.clothingTypeId`, String(found.id));
       setValue(`items.${index}.clothingTypeName`, found.nome);
-      setValue(`items.${index}.pricePerUnit`, found.preco);
+      setValue(`items.${index}.pricePerUnit`, safeNumber(found.preco));
     }
   };
 
   const onSubmit = async (data: NewServiceSchema) => {
+    // Validação de prevenção contra itens vazios ou sem serviço
+    const hasEmptyItem = data.items.some(
+      (it) => !it.clothingTypeId || safeNumber(it.quantity) <= 0
+    );
+    if (hasEmptyItem) {
+      addToast("Selecione o tipo de serviço para todos os itens adicionados.", "warning");
+      return;
+    }
+
     try {
       const payload = {
-        clienteId: parseInt(data.clientId, 10),
-        observacoes: data.notes || undefined,
-        previsaoPara: data.expectedDeliveryAt ? new Date(data.expectedDeliveryAt).toISOString() : undefined,
+        clienteId: String(data.clientId),
+        observacoes: data.notes?.trim() || undefined,
+        previsaoPara: data.expectedDeliveryAt
+          ? new Date(data.expectedDeliveryAt).toISOString()
+          : undefined,
         status: "recebido",
         itens: data.items.map((item) => ({
-          servicoId: parseInt(item.clothingTypeId, 10),
-          quantidade: parseInt(String(item.quantity), 10),
-          valorUnit: parseFloat(String(item.pricePerUnit)),
+          servicoId: String(item.clothingTypeId),
+          quantidade: Math.max(1, Math.round(safeNumber(item.quantity))),
+          valorUnit: Math.max(0, safeNumber(item.pricePerUnit)),
         })),
       };
 
@@ -162,10 +179,10 @@ export function NewServicePage() {
   return (
     <div className="animate-fade-in max-w-2xl w-full min-w-0">
       <PageHeader
-        title="Novo Pedido / Serviço"
+        title="Novo Pedido"
         breadcrumbs={[
           { label: "Serviços", href: "/servicos" },
-          { label: "Novo serviço" },
+          { label: "Novo pedido" },
         ]}
       />
 
@@ -194,9 +211,9 @@ export function NewServicePage() {
         <div className="mb-4 p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
           <div className="text-sm text-amber-800 flex-1">
-            <p className="font-semibold">Nenhum serviço / tipo de roupa cadastrado</p>
+            <p className="font-semibold">Nenhum serviço cadastrado no catálogo</p>
             <p className="mt-0.5 text-xs text-amber-700">
-              Para adicionar itens ao pedido, execute o seed ou cadastre novos serviços nas configurações.
+              Cadastre novos serviços ou tipos de roupa nas configurações para adicionar itens ao pedido.
             </p>
             <Link
               to="/configuracoes"
@@ -312,8 +329,8 @@ export function NewServicePage() {
 
           <div className="flex flex-col gap-3">
             {fields.map((field, index) => {
-              const itemQuantity = Number(watchedItems?.[index]?.quantity) || 0;
-              const itemPrice = Number(watchedItems?.[index]?.pricePerUnit) || 0;
+              const itemQuantity = safeNumber(watchedItems?.[index]?.quantity);
+              const itemPrice = safeNumber(watchedItems?.[index]?.pricePerUnit);
               const subtotal = itemQuantity * itemPrice;
 
               return (
