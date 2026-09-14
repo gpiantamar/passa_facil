@@ -35,7 +35,7 @@ export function LoginPage() {
     try {
       const result = await login({ email: data.email, password: data.password });
       saveToken(result.token);
-      navigate("/", { replace: true });
+      navigate("/app", { replace: true });
     } catch (err) {
       setServerError(
         err instanceof Error ? err.message : "Não foi possível fazer login. Tente novamente."

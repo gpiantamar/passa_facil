@@ -11,14 +11,15 @@ import {
   LogOut,
   X,
 } from "lucide-react";
+import { useAuth } from "../../hooks/useAuth";
 
 const navItems = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
-  { to: "/clientes", label: "Clientes", icon: Users },
-  { to: "/servicos", label: "Serviços", icon: Shirt },
-  { to: "/pagamentos", label: "Pagamentos", icon: CreditCard },
-  { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
-  { to: "/configuracoes", label: "Configurações", icon: Settings },
+  { to: "/app", label: "Dashboard", icon: LayoutDashboard, end: true },
+  { to: "/app/clientes", label: "Clientes", icon: Users },
+  { to: "/app/servicos", label: "Serviços", icon: Shirt },
+  { to: "/app/pagamentos", label: "Pagamentos", icon: CreditCard },
+  { to: "/app/relatorios", label: "Relatórios", icon: BarChart3 },
+  { to: "/app/configuracoes", label: "Configurações", icon: Settings },
 ];
 
 interface SidebarProps {
@@ -28,9 +29,11 @@ interface SidebarProps {
 
 export function Sidebar({ open, onClose }: SidebarProps) {
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const handleLogout = () => {
-    navigate("/login");
+    logout();
+    navigate("/entrar", { replace: true });
   };
 
   const content = (

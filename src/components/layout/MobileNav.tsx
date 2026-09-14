@@ -19,7 +19,7 @@ export function MobileNav() {
       <div className="flex items-center w-full px-2">
         {/* Dashboard */}
         <NavLink
-          to="/"
+          to="/app"
           end
           className={({ isActive }) =>
             `flex-1 flex flex-col items-center gap-0.5 py-3 text-xs font-medium transition-colors ${
@@ -37,7 +37,7 @@ export function MobileNav() {
 
         {/* Clients */}
         <NavLink
-          to="/clientes"
+          to="/app/clientes"
           className={({ isActive }) =>
             `flex-1 flex flex-col items-center gap-0.5 py-3 text-xs font-medium transition-colors ${
               isActive ? "text-indigo-600" : "text-slate-500"
@@ -55,7 +55,7 @@ export function MobileNav() {
         {/* New Service — central FAB */}
         <div className="flex-1 flex items-center justify-center py-1">
           <button
-            onClick={() => navigate("/servicos/novo")}
+            onClick={() => navigate("/app/servicos/novo")}
             className="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:bg-indigo-800 transition-all flex-shrink-0 cursor-pointer"
             aria-label="Novo serviço"
           >
@@ -65,7 +65,7 @@ export function MobileNav() {
 
         {/* Payments */}
         <NavLink
-          to="/pagamentos"
+          to="/app/pagamentos"
           className={({ isActive }) =>
             `flex-1 flex flex-col items-center gap-0.5 py-3 text-xs font-medium transition-colors ${
               isActive ? "text-indigo-600" : "text-slate-500"
@@ -82,7 +82,7 @@ export function MobileNav() {
 
         {/* More */}
         <NavLink
-          to="/relatorios"
+          to="/app/relatorios"
           className={({ isActive }) =>
             `flex-1 flex flex-col items-center gap-0.5 py-3 text-xs font-medium transition-colors ${
               isActive ? "text-indigo-600" : "text-slate-500"

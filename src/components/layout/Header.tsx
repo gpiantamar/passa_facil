@@ -4,20 +4,20 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 
 const pageTitles: Record<string, string> = {
-  "/": "Dashboard",
-  "/clientes": "Clientes",
-  "/clientes/novo": "Novo Cliente",
-  "/servicos": "Serviços",
-  "/servicos/novo": "Novo Serviço",
-  "/pagamentos": "Pagamentos",
-  "/relatorios": "Relatórios",
-  "/configuracoes": "Configurações",
+  "/app": "Dashboard",
+  "/app/clientes": "Clientes",
+  "/app/clientes/novo": "Novo Cliente",
+  "/app/servicos": "Serviços",
+  "/app/servicos/novo": "Novo Serviço",
+  "/app/pagamentos": "Pagamentos",
+  "/app/relatorios": "Relatórios",
+  "/app/configuracoes": "Configurações",
 };
 
 function getPageTitle(pathname: string): string {
   if (pageTitles[pathname]) return pageTitles[pathname];
-  if (pathname.startsWith("/clientes/")) return "Detalhes do Cliente";
-  if (pathname.startsWith("/servicos/")) return "Detalhes do Serviço";
+  if (pathname.startsWith("/app/clientes/")) return "Detalhes do Cliente";
+  if (pathname.startsWith("/app/servicos/")) return "Detalhes do Serviço";
   return "PassaFácil";
 }
 
@@ -35,7 +35,7 @@ export function Header({ onMenuClick }: HeaderProps) {
   const handleLogout = () => {
     if (confirmLogout) {
       logout();
-      navigate("/login", { replace: true });
+      navigate("/entrar", { replace: true });
     } else {
       setConfirmLogout(true);
       // Cancela confirmação após 3 segundos
