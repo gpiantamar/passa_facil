@@ -4,6 +4,7 @@ export interface ClienteApi {
   telefone: string;
   endereco: string | null;
   criadoEm: string;
+  pedidos?: Array<{ id: number; criadoEm: string; valorTotal: number; status: string }>;
 }
 
 export interface ServicoApi {
@@ -34,6 +35,11 @@ export interface PedidoApi {
   itens: ItemPedidoApi[];
 }
 
+export const API_URL: string;
+export function request<T = any>(endpoint: string, options?: RequestInit): Promise<T>;
+export function getStatus(): Promise<{ ok: boolean; timestamp: string }>;
+export function checkStatus(): Promise<{ ok: boolean; timestamp: string }>;
+
 export function getClientes(): Promise<ClienteApi[]>;
 export function criarCliente(data: { nome: string; telefone: string; endereco?: string | null }): Promise<ClienteApi>;
 
@@ -54,6 +60,10 @@ export function atualizarStatusPedido(pedidoId: number | string, status: string)
 export function login(credentials: { email: string; password: string }): Promise<{ token: string; expiresIn: number }>;
 
 export const api: {
+  API_URL: string;
+  request: typeof request;
+  getStatus: typeof getStatus;
+  checkStatus: typeof checkStatus;
   login: typeof login;
   getClientes: typeof getClientes;
   criarCliente: typeof criarCliente;

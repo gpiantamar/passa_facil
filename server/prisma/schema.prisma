@@ -1,6 +1,3 @@
-// Prisma schema para sistema de passadoria de roupas
-// Compatível com PostgreSQL (Supabase / Neon / Render / Railway)
-
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native", "rhel-openssl-1.0.x"]
@@ -13,56 +10,48 @@ datasource db {
 }
 
 model Cliente {
-  id        String   @id @default(uuid())
-  nome      String
-  telefone  String
-  endereco  String?
-  createdAt DateTime @default(now())
-
-  // Relacionamento com Pedido
-  pedidos   Pedido[]
+  id       Int      @id @default(autoincrement())
+  nome     String
+  telefone String
+  endereco String?
+  pedidos  Pedido[]
+  criadoEm DateTime @default(now())
 
   @@map("clientes")
 }
 
 model Servico {
-  id          String       @id @default(uuid())
-  nome        String       // Ex: Camisa Social, Lençol, Calça
+  id          Int          @id @default(autoincrement())
+  nome        String
   preco       Float
-  unidade     String       @default("un") // "un" ou "kg"
-
-  // Relacionamento com Itens de Pedido
+  unidade     String       @default("un")
   itensPedido ItemPedido[]
 
   @@map("servicos")
 }
 
 model Pedido {
-  id           String       @id @default(uuid())
-  clienteId    String
-  status       String       @default("recebido") // "recebido", "passando", "pronto", "entregue"
-  valorTotal   Float
-  observacoes  String?
-  previsaoPara DateTime?
-  createdAt    DateTime     @default(now())
-
-  // Relacionamentos
+  id           Int          @id @default(autoincrement())
+  clienteId    Int
   cliente      Cliente      @relation(fields: [clienteId], references: [id])
+  status       String       @default("recebido")
+  valorTotal   Float        @default(0.0)
+  observacoes  String?
   itens        ItemPedido[]
+  criadoEm     DateTime     @default(now())
+  previsaoPara DateTime?
 
   @@map("pedidos")
 }
 
 model ItemPedido {
-  id         String   @id @default(uuid())
-  pedidoId   String
-  servicoId  String
+  id         Int     @id @default(autoincrement())
+  pedidoId   Int
+  pedido     Pedido  @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  servicoId  Int
+  servico    Servico @relation(fields: [servicoId], references: [id])
   quantidade Int
   valorUnit  Float
-
-  // Deleção em cascata com Pedido
-  pedido     Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
-  servico    Servico  @relation(fields: [servicoId], references: [id])
 
   @@map("itens_pedido")
 }

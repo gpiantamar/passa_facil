@@ -1,194 +1,215 @@
-// API Client centralizado para o front-end Passa Fácil
-// Em produção (Vercel), as chamadas vão para /api/* no mesmo domínio.
-// Em dev local, aponta para o servidor Express rodando em localhost.
-const API_BASE_URL = import.meta.env.VITE_API_URL ||
-  (import.meta.env.PROD ? "/api" : "http://localhost:3333/api");
+// ============================================================================
+// SERVIÇO DE CONEXÃO COM A API - PASSA FÁCIL
+// Configurado com fallback inteligente, blindagem de CORS e conversão de tipos
+// ============================================================================
+
+// 1. Definição da URL base com fallback à prova de falhas
+export const API_URL =
+  (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_API_URL) ||
+  (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL) ||
+  "http://localhost:3333";
+
+// Remove barras no final para garantir padronização dos caminhos
+const BASE_URL = API_URL.replace(/\/+$/, "");
 
 /**
- * Utilitário de requisição genérico com tratamento de erros robusto.
+ * Função centralizadora de fetch que:
+ * - Sempre injeta o header 'Content-Type': 'application/json'
+ * - Injeta o token JWT de autenticação do localStorage se disponível
+ * - Verifica if (!res.ok) lançando erro detalhado com o status e a mensagem da API
+ * - Envolve toda requisição em try/catch detalhado printando no console
  */
-async function request(endpoint, options = {}) {
-  // Garante que o endpoint não duplica o prefixo /api
-  const url = `${API_BASE_URL}${endpoint}`;
+export async function request(endpoint, options = {}) {
+  // Garante que o endpoint comece com '/'
+  const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  const url = `${BASE_URL}${cleanEndpoint}`;
 
-  // Lê o token JWT do localStorage e injeta no header Authorization
-  const token = localStorage.getItem("pf_auth_token");
+  const token = typeof window !== "undefined" ? localStorage.getItem("pf_auth_token") : null;
 
   const config = {
+    method: options.method || "GET",
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
+      ...(options.headers || {}),
     },
     ...options,
   };
 
   try {
-    const response = await fetch(url, config);
+    const res = await fetch(url, config);
 
-    if (!response.ok) {
-      // Token expirado ou inválido → dispara logout global
-      if (response.status === 401) {
+    if (!res.ok) {
+      // Notifica deslogamento suave se token expirar
+      if (res.status === 401 && typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent("pf:unauthorized"));
       }
 
-      let errorMessage = `Erro ${response.status}: ${response.statusText}`;
+      let errorDetail = `Status ${res.status} (${res.statusText})`;
       try {
-        const errorData = await response.json();
-        if (errorData?.error) errorMessage = errorData.error;
-        else if (errorData?.message) errorMessage = errorData.message;
+        const errorData = await res.json();
+        if (errorData?.erro) {
+          errorDetail = errorData.erro;
+        } else if (errorData?.error) {
+          errorDetail = errorData.error;
+        } else if (errorData?.message) {
+          errorDetail = errorData.message;
+        }
       } catch {
-        // Ignora falha de parse JSON de resposta de erro
+        try {
+          const errorText = await res.text();
+          if (errorText) errorDetail = `${errorDetail}: ${errorText}`;
+        } catch {
+          // Ignora erro de parsing do texto
+        }
       }
-      throw new Error(errorMessage);
+
+      throw new Error(`Falha na requisição [${config.method} ${cleanEndpoint}]: ${errorDetail}`);
     }
 
-    // Se resposta não tiver conteúdo (ex: 204)
-    if (response.status === 204) {
+    if (res.status === 204) {
       return null;
     }
 
-    return await response.json();
-  } catch (error) {
-    if (error.name === "TypeError" && error.message.includes("fetch")) {
-      console.error(`[API] Não foi possível conectar ao servidor em ${API_BASE_URL}. O backend está ativo?`);
-      throw new Error("Não foi possível conectar ao servidor. Verifique se o back-end está ativo.");
-    }
-    throw error;
+    return await res.json();
+  } catch (erro) {
+    console.error(`Erro na requisição ${endpoint}:`, erro);
+    throw erro;
   }
 }
 
-// =============================================
-// CLIENTES
-// =============================================
+// ============================================================================
+// 1. HEALTH CHECK / STATUS
+// ============================================================================
+export async function getStatus() {
+  return await request("/api/status");
+}
 
-/**
- * Busca todos os clientes cadastrados ordenados alfabeticamente.
- */
+export const checkStatus = getStatus;
+
+// ============================================================================
+// 2. AUTENTICAÇÃO
+// ============================================================================
+export async function login({ email, password }) {
+  return await request("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+// ============================================================================
+// 3. CLIENTES
+// ============================================================================
 export async function getClientes() {
-  return await request("/clientes");
+  return await request("/api/clientes");
 }
 
-/**
- * Cria um novo cliente.
- * @param {{ nome: string, telefone: string, endereco?: string }} param0
- */
 export async function criarCliente({ nome, telefone, endereco }) {
-  return await request("/clientes", {
-    method: "POST",
-    body: JSON.stringify({ nome, telefone, endereco }),
-  });
-}
-
-// =============================================
-// SERVIÇOS (CATÁLOGO DE PEÇAS)
-// =============================================
-
-/**
- * Busca todos os tipos de serviço/peças disponíveis no catálogo.
- */
-export async function getServicos() {
-  return await request("/servicos");
-}
-
-/**
- * Cadastra um novo serviço/tipo de peça no catálogo.
- * @param {{ nome: string, preco: number, unidade?: string }} param0
- */
-export async function criarServico({ nome, preco, unidade = "un" }) {
-  return await request("/servicos", {
-    method: "POST",
-    body: JSON.stringify({
-      nome,
-      preco: typeof preco === "number" ? preco : parseFloat(preco),
-      unidade,
-    }),
-  });
-}
-
-// =============================================
-// PEDIDOS
-// =============================================
-
-/**
- * Busca todos os pedidos incluindo cliente, itens e serviços associados.
- */
-export async function getPedidos() {
-  return await request("/pedidos");
-}
-
-/**
- * Cria um novo pedido com seus respectivos itens.
- * @param {{
- *   clienteId: number | string,
- *   observacoes?: string,
- *   previsaoPara?: string,
- *   status?: string,
- *   itens: Array<{ servicoId: number | string, quantidade: number, valorUnit?: number }>
- * }} param0
- */
-export async function criarPedido({ clienteId, observacoes, itens, previsaoPara, status }) {
   const payload = {
-    clienteId: String(clienteId),   // UUID — não converter para int
-    observacoes: observacoes ? String(observacoes).trim() : null,
-    previsaoPara: previsaoPara || null,
-    status: status || "recebido",
-    itens: itens.map((item) => ({
-      servicoId: String(item.servicoId),   // UUID — não converter para int
-      quantidade: parseInt(item.quantidade, 10),
-      ...(item.valorUnit !== undefined && { valorUnit: parseFloat(item.valorUnit) }),
-    })),
+    nome: String(nome || "").trim(),
+    telefone: String(telefone || "").trim(),
+    endereco: endereco ? String(endereco).trim() : null,
   };
 
-  return await request("/pedidos", {
+  return await request("/api/clientes", {
     method: "POST",
     body: JSON.stringify(payload),
   });
 }
 
-/**
- * Atualiza o status de um pedido existente.
- * @param {number | string} pedidoId
- * @param {"recebido" | "passando" | "em andamento" | "pronto" | "entregue" | string} status
- */
-export async function atualizarStatusPedido(pedidoId, status) {
-  return await request(`/pedidos/${pedidoId}/status`, {
-    method: "PATCH",
-    body: JSON.stringify({ status }),
-  });
+// ============================================================================
+// 4. SERVIÇOS (CATÁLOGO DE PEÇAS)
+// ============================================================================
+export async function getServicos() {
+  return await request("/api/servicos");
 }
 
-// =============================================
-// AUTENTICAÇÃO
-// =============================================
-
-/**
- * Realiza o login e retorna o token JWT.
- * @param {{ email: string, password: string }} credentials
- * @returns {{ token: string, expiresIn: number }}
- */
-export async function login({ email, password }) {
-  // Login não usa o helper request() pois não precisa de token
-  const url = `${API_BASE_URL}/auth/login`;
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  });
-
-  if (!response.ok) {
-    let msg = `Erro ${response.status}`;
-    try {
-      const data = await response.json();
-      if (data?.error) msg = data.error;
-    } catch { /* ignore */ }
-    throw new Error(msg);
+export async function criarServico({ nome, preco, unidade = "un" }) {
+  const precoNumerico = Number(preco);
+  if (isNaN(precoNumerico) || precoNumerico < 0) {
+    throw new Error("O preço do serviço deve ser um número válido e positivo.");
   }
 
-  return await response.json();
+  const payload = {
+    nome: String(nome || "").trim(),
+    preco: precoNumerico,
+    unidade: String(unidade || "un").trim(),
+  };
+
+  return await request("/api/servicos", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
 
+// ============================================================================
+// 5. PEDIDOS (COMANDAS OPERACIONAIS)
+// ============================================================================
+export async function getPedidos() {
+  return await request("/api/pedidos");
+}
+
+export async function criarPedido({ clienteId, observacoes, itens, previsaoPara, status }) {
+  const numericClienteId = Number(clienteId);
+  if (isNaN(numericClienteId) || numericClienteId <= 0) {
+    throw new Error("clienteId inválido: deve ser um número inteiro válido.");
+  }
+
+  if (!Array.isArray(itens) || itens.length === 0) {
+    throw new Error("O pedido deve conter pelo menos 1 item.");
+  }
+
+  const payload = {
+    clienteId: numericClienteId,
+    observacoes: observacoes ? String(observacoes).trim() : null,
+    previsaoPara: previsaoPara || null,
+    status: status || "recebido",
+    itens: itens.map((item) => {
+      const servicoId = Number(item.servicoId);
+      const quantidade = Number(item.quantidade);
+      const valorUnit =
+        item.valorUnit !== undefined && item.valorUnit !== null
+          ? Number(item.valorUnit)
+          : undefined;
+
+      if (isNaN(servicoId) || isNaN(quantidade) || quantidade <= 0) {
+        throw new Error("Cada item deve ter 'servicoId' e 'quantidade' numéricos válidos.");
+      }
+
+      return {
+        servicoId,
+        quantidade,
+        ...(valorUnit !== undefined && !isNaN(valorUnit) ? { valorUnit } : {}),
+      };
+    }),
+  };
+
+  return await request("/api/pedidos", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function atualizarStatusPedido(pedidoId, status) {
+  const numericPedidoId = Number(pedidoId);
+  if (isNaN(numericPedidoId) || numericPedidoId <= 0) {
+    throw new Error("ID do pedido inválido: deve ser um número.");
+  }
+
+  return await request(`/api/pedidos/${numericPedidoId}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status: String(status || "").trim().toLowerCase() }),
+  });
+}
+
+// ============================================================================
+// EXPORTAÇÃO CENTRALIZADA
+// ============================================================================
 export const api = {
+  API_URL,
+  request,
+  getStatus,
+  checkStatus,
   login,
   getClientes,
   criarCliente,
@@ -200,4 +221,3 @@ export const api = {
 };
 
 export default api;
-
