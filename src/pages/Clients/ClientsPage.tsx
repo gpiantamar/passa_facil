@@ -1,23 +1,47 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, Plus, Phone, Clock, DollarSign, AlertCircle, RefreshCw, MessageCircle } from "lucide-react";
+import {
+  Users,
+  Plus,
+  Phone,
+  Clock,
+  AlertCircle,
+  RefreshCw,
+  MessageCircle,
+  Search,
+  Check,
+  X,
+  UserPlus,
+} from "lucide-react";
 import { PageHeader } from "../../components/ui/PageHeader";
-import { SearchInput } from "../../components/ui/SearchInput";
 import { Button } from "../../components/ui/Button";
+import { Input } from "../../components/ui/Input";
+import { PhoneInput } from "../../components/ui/PhoneInput";
+import { Modal } from "../../components/ui/Modal";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { TableSkeleton } from "../../components/ui/Loading";
-import { getClientes } from "../../services/api.js";
+import { getClientes, criarCliente } from "../../services/api.js";
 import type { Client } from "../../types";
-import { formatCurrency, formatDate, formatPhone } from "../../utils/formatters";
+import { formatDate, formatPhone } from "../../utils/formatters";
 import { useDebounce } from "../../hooks/useDebounce";
+import { useToastContext } from "../../lib/toastContext";
 
 export function ClientsPage() {
   const navigate = useNavigate();
+  const { addToast } = useToastContext();
+
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
+
+  // Modal de cadastro de cliente
+  const [modalOpen, setModalOpen] = useState(false);
+  const [nome, setNome] = useState("");
+  const [telefone, setTelefone] = useState("");
+  const [endereco, setEndereco] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const fetchClients = useCallback(async () => {
     setLoading(true);
@@ -35,13 +59,14 @@ export function ClientsPage() {
         totalSpent: 0,
         totalPaid: 0,
         pendingAmount: 0,
+        lastServiceDate: c.pedidos && c.pedidos.length > 0 ? c.pedidos[0].criadoEm?.split("T")[0] : undefined,
       }));
       setClients(mapped);
     } catch (err: any) {
       console.error("Erro ao carregar clientes:", err);
       setError(
         err?.message ||
-          "Não foi possível conectar ao servidor. Verifique a conexão com o banco de dados."
+          "Não foi possível conectar à API de clientes. Verifique o servidor local em http://localhost:3333."
       );
     } finally {
       setLoading(false);
@@ -51,6 +76,41 @@ export function ClientsPage() {
   useEffect(() => {
     fetchClients();
   }, [fetchClients]);
+
+  // Salvar novo cliente via modal
+  const handleSaveClient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nome.trim()) {
+      addToast("O nome do cliente é obrigatório.", "warning");
+      return;
+    }
+    const cleanDigits = telefone.replace(/\D/g, "");
+    if (cleanDigits.length < 10) {
+      addToast("Informe um telefone válido com DDD (mínimo 10 dígitos).", "warning");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await criarCliente({
+        nome: nome.trim(),
+        telefone: telefone.trim(),
+        endereco: endereco.trim() || undefined,
+      });
+
+      addToast("Cliente cadastrado com sucesso!", "success");
+      setModalOpen(false);
+      setNome("");
+      setTelefone("");
+      setEndereco("");
+      fetchClients();
+    } catch (err: any) {
+      console.error("Erro ao cadastrar cliente:", err);
+      addToast(err?.message || "Não foi possível cadastrar o cliente.", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const filteredClients = clients.filter((c) => {
     if (!debouncedSearch) return true;
@@ -63,31 +123,36 @@ export function ClientsPage() {
   });
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in space-y-4">
       <PageHeader
-        title="Clientes"
-        subtitle="Gerencie seus clientes e consulte o histórico de pedidos."
+        title="Gestão de Clientes"
+        subtitle="Consulte clientes cadastrados e o total de pedidos realizados."
         actions={
           <Button
-            onClick={() => navigate("/clientes/novo")}
+            onClick={() => setModalOpen(true)}
             leftIcon={<Plus className="w-4 h-4" />}
+            className="shadow-xs shadow-indigo-200 font-bold"
           >
-            Novo cliente
+            + Novo Cliente
           </Button>
         }
       />
 
-      {/* Busca */}
-      <SearchInput
-        value={search}
-        onChange={setSearch}
-        placeholder="Pesquisar por nome ou telefone..."
-        className="mb-4 max-w-sm"
-      />
+      {/* Busca Rápida */}
+      <div className="relative max-w-sm">
+        <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar por nome ou telefone..."
+          className="w-full h-10 pl-9 pr-3 text-sm bg-white rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50"
+        />
+      </div>
 
-      {/* Mensagem de Erro com Ação de Recarregar */}
+      {/* Mensagem de Erro com Retry */}
       {error && (
-        <div className="mb-4 p-4 rounded-2xl bg-red-50 border border-red-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-red-800">
+        <div className="p-4 rounded-2xl bg-red-50 border border-red-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-red-800">
           <div className="flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
             <div>
@@ -108,20 +173,20 @@ export function ClientsPage() {
       )}
 
       {loading ? (
-        <TableSkeleton rows={6} cols={5} />
+        <TableSkeleton rows={6} cols={4} />
       ) : filteredClients.length === 0 ? (
         <EmptyState
           icon={Users}
           title="Nenhum cliente encontrado."
           description={
             debouncedSearch
-              ? `Nenhum resultado encontrado para "${debouncedSearch}".`
-              : "Comece cadastrando seu primeiro cliente no sistema."
+              ? `Nenhum resultado para "${debouncedSearch}".`
+              : "Cadastre seu primeiro cliente para iniciar os atendimentos."
           }
           action={
             !debouncedSearch ? (
               <Button
-                onClick={() => navigate("/clientes/novo")}
+                onClick={() => setModalOpen(true)}
                 leftIcon={<Plus className="w-4 h-4" />}
                 size="sm"
               >
@@ -132,22 +197,32 @@ export function ClientsPage() {
         />
       ) : (
         <>
-          {/* Desktop table */}
-          <div className="hidden sm:block bg-white rounded-3xl border border-slate-100 shadow-sm overflow-x-auto w-full">
-            <table className="w-full text-sm min-w-[550px]">
+          {/* Tabela de Clientes Desktop */}
+          <div className="hidden sm:block bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-x-auto w-full">
+            <table className="w-full text-sm min-w-[600px]">
               <thead className="bg-slate-50 border-b border-slate-100">
                 <tr>
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500">Cliente</th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500">Telefone / WhatsApp</th>
-                  <th className="px-5 py-3 text-right text-xs font-semibold text-slate-500">Pedidos</th>
-                  <th className="px-5 py-3 text-right text-xs font-semibold text-slate-500">Ações</th>
+                  <th className="px-5 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    Cliente
+                  </th>
+                  <th className="px-5 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    Telefone / WhatsApp
+                  </th>
+                  <th className="px-5 py-3.5 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    Total de Pedidos
+                  </th>
+                  <th className="px-5 py-3.5 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    Ações
+                  </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody className="divide-y divide-slate-100">
                 {filteredClients.map((client) => {
                   const cleanPhone = client.phone.replace(/\D/g, "");
                   const waUrl = cleanPhone
-                    ? `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(`Olá, ${client.name}! Tudo bem?`)}`
+                    ? `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(
+                        `Olá, ${client.name}! Tudo bem? Passando para falar sobre suas roupas no PassaFácil.`
+                      )}`
                     : null;
 
                   return (
@@ -156,27 +231,29 @@ export function ClientsPage() {
                       onClick={() => navigate(`/clientes/${client.id}`)}
                       className="hover:bg-slate-50/80 cursor-pointer transition-colors"
                     >
-                      <td className="px-5 py-4">
-                        <p className="font-semibold text-slate-800">{client.name}</p>
+                      <td className="px-5 py-3.5">
+                        <p className="font-bold text-slate-900">{client.name}</p>
                         {client.address && (
                           <p className="text-xs text-slate-400 mt-0.5">{client.address}</p>
                         )}
                       </td>
-                      <td className="px-5 py-4 text-slate-600">
+                      <td className="px-5 py-3.5 text-slate-600 font-mono text-xs">
                         {formatPhone(client.phone)}
                       </td>
-                      <td className="px-5 py-4 text-right text-slate-700 font-medium">
-                        {client.totalServices}
+                      <td className="px-5 py-3.5 text-right">
+                        <span className="font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-full text-xs">
+                          {client.totalServices} {client.totalServices === 1 ? "pedido" : "pedidos"}
+                        </span>
                       </td>
-                      <td className="px-5 py-4 text-right">
+                      <td className="px-5 py-3.5 text-right">
                         <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                           {waUrl && (
                             <a
                               href={waUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              title="Conversar no WhatsApp"
-                              className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/70 px-2.5 py-1.5 rounded-xl transition-colors"
+                              title="Abrir WhatsApp"
+                              className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-xl transition-colors"
                             >
                               <MessageCircle className="w-3.5 h-3.5" />
                               <span>WhatsApp</span>
@@ -191,49 +268,48 @@ export function ClientsPage() {
             </table>
           </div>
 
-          {/* Mobile cards */}
-          <div className="sm:hidden flex flex-col gap-3">
+          {/* Cards Mobile */}
+          <div className="sm:hidden flex flex-col gap-2.5">
             {filteredClients.map((client) => {
               const cleanPhone = client.phone.replace(/\D/g, "");
               const waUrl = cleanPhone
-                ? `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(`Olá, ${client.name}! Tudo bem?`)}`
+                ? `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(
+                    `Olá, ${client.name}! Tudo bem? Passando para falar sobre suas roupas no PassaFácil.`
+                  )}`
                 : null;
 
               return (
                 <div
                   key={client.id}
                   onClick={() => navigate(`/clientes/${client.id}`)}
-                  className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 text-left w-full hover:shadow-md transition-shadow cursor-pointer"
+                  className="bg-white rounded-xl border border-slate-200/80 shadow-2xs p-4 text-left w-full hover:shadow-xs transition-shadow cursor-pointer flex flex-col gap-2"
                 >
-                  <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="font-bold text-slate-800 truncate">{client.name}</p>
+                      <p className="font-bold text-slate-900">{client.name}</p>
                       {client.address && (
                         <p className="text-xs text-slate-400 mt-0.5">{client.address}</p>
                       )}
                     </div>
+                    <span className="font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full text-[11px] flex-shrink-0">
+                      {client.totalServices} ped.
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs text-slate-500">
+                    <span className="font-mono">{formatPhone(client.phone)}</span>
                     {waUrl && (
                       <a
                         href={waUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center flex-shrink-0"
-                        title="Abrir WhatsApp"
+                        className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200"
                       >
-                        <MessageCircle className="w-4 h-4" />
+                        <MessageCircle className="w-3.5 h-3.5" />
+                        <span>WhatsApp</span>
                       </a>
                     )}
-                  </div>
-                  <div className="flex items-center gap-x-4 gap-y-1.5 flex-wrap text-xs text-slate-500 pt-2 border-t border-slate-50">
-                    <span className="inline-flex items-center gap-1">
-                      <Phone className="w-3.5 h-3.5 text-slate-400" />
-                      <span>{formatPhone(client.phone)}</span>
-                    </span>
-                    <span className="inline-flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5 text-slate-400" />
-                      <span>{client.totalServices} pedidos</span>
-                    </span>
                   </div>
                 </div>
               );
@@ -241,6 +317,52 @@ export function ClientsPage() {
           </div>
         </>
       )}
+
+      {/* ── MODAL DE CADASTRO DE CLIENTE ───────────────────────────────────── */}
+      <Modal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title="Cadastrar Novo Cliente"
+        size="md"
+      >
+        <form onSubmit={handleSaveClient} className="flex flex-col gap-4">
+          <Input
+            label="Nome completo *"
+            placeholder="Ex: Maria Oliveira"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            required
+          />
+
+          <PhoneInput
+            label="Telefone celular (WhatsApp) *"
+            value={telefone}
+            onValueChange={setTelefone}
+            required
+          />
+
+          <Input
+            label="Endereço residencial ou comercial"
+            placeholder="Rua, número, bairro, complemento"
+            value={endereco}
+            onChange={(e) => setEndereco(e.target.value)}
+          />
+
+          <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setModalOpen(false)}
+              disabled={saving}
+            >
+              Cancelar
+            </Button>
+            <Button type="submit" loading={saving}>
+              Cadastrar Cliente
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

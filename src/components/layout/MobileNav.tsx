@@ -4,8 +4,8 @@ import {
   LayoutDashboard,
   Users,
   Plus,
-  CreditCard,
-  MoreHorizontal,
+  Shirt,
+  Tag,
 } from "lucide-react";
 
 export function MobileNav() {
@@ -13,16 +13,16 @@ export function MobileNav() {
 
   return (
     <nav
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-slate-100 flex items-center safe-area-bottom"
-      aria-label="Navegação principal"
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-slate-200 flex items-center safe-area-bottom shadow-lg"
+      aria-label="Navegação rápida"
     >
-      <div className="flex items-center w-full px-2">
-        {/* Dashboard */}
+      <div className="flex items-center w-full px-2 py-1">
+        {/* Painel Operacional */}
         <NavLink
-          to="/app"
+          to="/"
           end
           className={({ isActive }) =>
-            `flex-1 flex flex-col items-center gap-0.5 py-3 text-xs font-medium transition-colors ${
+            `flex-1 flex flex-col items-center gap-0.5 py-2 text-[11px] font-bold transition-colors ${
               isActive ? "text-indigo-600" : "text-slate-500"
             }`
           }
@@ -30,16 +30,16 @@ export function MobileNav() {
           {({ isActive }) => (
             <>
               <LayoutDashboard className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-indigo-600" : "text-slate-400"}`} />
-              <span className="truncate">Início</span>
+              <span className="truncate">Painel</span>
             </>
           )}
         </NavLink>
 
-        {/* Clients */}
+        {/* Clientes */}
         <NavLink
-          to="/app/clientes"
+          to="/clientes"
           className={({ isActive }) =>
-            `flex-1 flex flex-col items-center gap-0.5 py-3 text-xs font-medium transition-colors ${
+            `flex-1 flex flex-col items-center gap-0.5 py-2 text-[11px] font-bold transition-colors ${
               isActive ? "text-indigo-600" : "text-slate-500"
             }`
           }
@@ -52,47 +52,48 @@ export function MobileNav() {
           )}
         </NavLink>
 
-        {/* New Service — central FAB */}
-        <div className="flex-1 flex items-center justify-center py-1">
+        {/* Central FAB - Nova Comanda */}
+        <div className="flex-1 flex items-center justify-center">
           <button
-            onClick={() => navigate("/app/servicos/novo")}
-            className="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:bg-indigo-800 transition-all flex-shrink-0 cursor-pointer"
-            aria-label="Novo serviço"
+            onClick={() => navigate("/servicos/novo")}
+            className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-300 hover:bg-indigo-700 active:scale-95 transition-all flex-shrink-0"
+            aria-label="Nova comanda"
+            title="Nova comanda"
           >
             <Plus className="w-6 h-6 text-white flex-shrink-0" />
           </button>
         </div>
 
-        {/* Payments */}
+        {/* Pedidos */}
         <NavLink
-          to="/app/pagamentos"
+          to="/pedidos"
           className={({ isActive }) =>
-            `flex-1 flex flex-col items-center gap-0.5 py-3 text-xs font-medium transition-colors ${
+            `flex-1 flex flex-col items-center gap-0.5 py-2 text-[11px] font-bold transition-colors ${
               isActive ? "text-indigo-600" : "text-slate-500"
             }`
           }
         >
           {({ isActive }) => (
             <>
-              <CreditCard className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-indigo-600" : "text-slate-400"}`} />
-              <span className="truncate">Pagamentos</span>
+              <Shirt className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-indigo-600" : "text-slate-400"}`} />
+              <span className="truncate">Pedidos</span>
             </>
           )}
         </NavLink>
 
-        {/* More */}
+        {/* Tabela de Preços */}
         <NavLink
-          to="/app/relatorios"
+          to="/tabela-precos"
           className={({ isActive }) =>
-            `flex-1 flex flex-col items-center gap-0.5 py-3 text-xs font-medium transition-colors ${
+            `flex-1 flex flex-col items-center gap-0.5 py-2 text-[11px] font-bold transition-colors ${
               isActive ? "text-indigo-600" : "text-slate-500"
             }`
           }
         >
           {({ isActive }) => (
             <>
-              <MoreHorizontal className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-indigo-600" : "text-slate-400"}`} />
-              <span className="truncate">Mais</span>
+              <Tag className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-indigo-600" : "text-slate-400"}`} />
+              <span className="truncate">Preços</span>
             </>
           )}
         </NavLink>

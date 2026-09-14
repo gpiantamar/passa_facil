@@ -5,10 +5,7 @@ import {
   Shirt,
   CheckCircle2,
   DollarSign,
-  TrendingUp,
   Package,
-  AlertTriangle,
-  Info,
   AlertCircle,
   Plus,
   ArrowRight,
@@ -17,17 +14,16 @@ import {
   Truck,
   RefreshCw,
   Columns,
-  LayoutGrid,
+  Search,
 } from "lucide-react";
-import { StatCard } from "../../components/ui/StatCard";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
-import { KanbanSkeleton, CardSkeleton } from "../../components/ui/Loading";
+import { KanbanSkeleton } from "../../components/ui/Loading";
 import { EmptyState } from "../../components/ui/EmptyState";
-import { dashboardService } from "../../services/dashboardService";
+import { QuickOrderModal } from "../../components/orders/QuickOrderModal";
 import { serviceService } from "../../services/serviceService";
-import type { DashboardData, Service, ServiceStatus } from "../../types";
-import { formatCurrency, formatDate, formatServiceCode } from "../../utils/formatters";
+import type { Service, ServiceStatus } from "../../types";
+import { formatCurrency, formatDate, formatServiceCode, todayISO } from "../../utils/formatters";
 import { useToastContext } from "../../lib/toastContext";
 
 // Definição das 4 etapas do fluxo operacional
@@ -48,7 +44,7 @@ const KANBAN_STAGES: Array<{
   {
     id: "RECEBIDO",
     label: "Recebido",
-    sublabel: "Aguardando início",
+    sublabel: "Acabaram de entrar",
     icon: Clock,
     colorClass: {
       badge: "bg-blue-50 text-blue-700 border-blue-200",
@@ -62,7 +58,7 @@ const KANBAN_STAGES: Array<{
   {
     id: "PASSANDO",
     label: "Passando",
-    sublabel: "Em andamento",
+    sublabel: "Na tábua / em processo",
     icon: Sparkles,
     colorClass: {
       badge: "bg-amber-50 text-amber-700 border-amber-200",
@@ -76,7 +72,7 @@ const KANBAN_STAGES: Array<{
   {
     id: "PRONTO",
     label: "Pronto",
-    sublabel: "Aguardando entrega",
+    sublabel: "Aguardando retirada",
     icon: CheckCircle2,
     colorClass: {
       badge: "bg-emerald-50 text-emerald-700 border-emerald-200",
@@ -90,13 +86,13 @@ const KANBAN_STAGES: Array<{
   {
     id: "ENTREGUE",
     label: "Entregue",
-    sublabel: "Finalizados",
+    sublabel: "Pedidos finalizados",
     icon: Truck,
     colorClass: {
-      badge: "bg-purple-50 text-purple-700 border-purple-200",
-      border: "border-purple-100",
-      headerBg: "bg-purple-50/70 text-purple-900",
-      dot: "bg-purple-500",
+      badge: "bg-slate-100 text-slate-700 border-slate-200",
+      border: "border-slate-100",
+      headerBg: "bg-slate-100/70 text-slate-900",
+      dot: "bg-slate-500",
       button: "bg-slate-100 hover:bg-slate-200 text-slate-700",
     },
   },
@@ -110,17 +106,12 @@ function normalizeStage(status: ServiceStatus | string): "RECEBIDO" | "PASSANDO"
   return "RECEBIDO";
 }
 
-function getWhatsAppUrl(phone: string, clientName: string, serviceCode: string, status: string): string {
+// Link direto oficial do WhatsApp para quando o pedido estiver Pronto
+function getWhatsAppReadyUrl(phone: string, clientName: string): string {
   const digits = phone.replace(/\D/g, "");
   if (!digits) return "#";
-  const statusMsg =
-    status === "PRONTO"
-      ? "está pronto para retirada!"
-      : status === "PASSANDO"
-      ? "já está sendo passado com carinho."
-      : "foi recebido e está em nossa fila.";
   const msg = encodeURIComponent(
-    `Olá, ${clientName}! Passando para avisar que seu pedido ${formatServiceCode(serviceCode)} no PassaFácil ${statusMsg}`
+    `Olá ${clientName}, suas roupas já foram passadas e estão prontas para retirada!`
   );
   return `https://wa.me/55${digits}?text=${msg}`;
 }
@@ -134,37 +125,20 @@ export function DashboardPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"RECEBIDO" | "PASSANDO" | "PRONTO" | "ENTREGUE">("RECEBIDO");
-  const [data, setData] = useState<DashboardData>({
-    stats: {
-      pendingServices: 0,
-      inProgressServices: 0,
-      readyServices: 0,
-      totalReceivable: 0,
-      monthlyRevenue: 0,
-      totalPiecesProcessed: 0,
-    },
-    alerts: [],
-    revenueByDay: [],
-    revenueByMonth: [],
-    todayServices: [],
-    recentServices: [],
-  });
+  const [quickOrderOpen, setQuickOrderOpen] = useState(false);
+  const [filterSearch, setFilterSearch] = useState("");
 
-  const loadData = useCallback(async () => {
+  const loadServices = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [dashData, allServs] = await Promise.all([
-        dashboardService.getDashboardData(),
-        serviceService.getAll(),
-      ]);
-      setData(dashData);
+      const allServs = await serviceService.getAll();
       setServices(allServs || []);
     } catch (err: any) {
-      console.error("Erro ao carregar dashboard:", err);
+      console.error("Erro ao carregar pedidos operacionais:", err);
       setError(
         err?.message ||
-          "Não foi possível carregar os dados operacionais. Verifique a conexão com o servidor."
+          "Não foi possível conectar ao servidor em http://localhost:3333. Verifique se a API está ativa."
       );
     } finally {
       setLoading(false);
@@ -172,10 +146,10 @@ export function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    loadServices();
+  }, [loadServices]);
 
-  // Transição rápida de status no fluxo Kanban
+  // Transição rápida de status de pedido com 1 clique
   const handleAdvanceStatus = async (
     service: Service,
     targetStatusValue: string,
@@ -186,7 +160,7 @@ export function DashboardPage() {
       const updated = await serviceService.updateStatus(service.id, targetStatusValue);
       setServices((prev) => prev.map((s) => (s.id === service.id ? updated : s)));
       addToast(
-        `Pedido ${formatServiceCode(service.code)} movido para "${targetLabel}" com sucesso!`,
+        `Pedido ${formatServiceCode(service.code)} avançado para "${targetLabel}"!`,
         "success"
       );
     } catch (err: any) {
@@ -200,66 +174,157 @@ export function DashboardPage() {
     }
   };
 
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+  // ─── 4 Métricas Rápidas Operacionais Solicitadas ─────────────────────────
+  const today = todayISO();
+
+  // 1. Peças a passar hoje (status RECEBIDO ou PASSANDO)
+  const pecasAPassarHoje = services
+    .filter((s) => ["RECEBIDO", "PASSANDO"].includes(normalizeStage(s.status)))
+    .reduce((acc, s) => acc + (s.totalPieces || 0), 0);
+
+  // 2. Pedidos em andamento (status PASSANDO)
+  const pedidosEmAndamento = services.filter(
+    (s) => normalizeStage(s.status) === "PASSANDO"
+  ).length;
+
+  // 3. Pedidos prontos aguardando entrega (status PRONTO)
+  const pedidosProntosAguardandoEntrega = services.filter(
+    (s) => normalizeStage(s.status) === "PRONTO"
+  ).length;
+
+  // 4. Faturamento do dia (pedidos finalizados ou entregues hoje)
+  const faturamentoDoDia = services
+    .filter((s) => {
+      const isDelivered = normalizeStage(s.status) === "ENTREGUE";
+      const isToday = s.deliveredAt === today || s.receivedAt === today;
+      return isDelivered && isToday;
+    })
+    .reduce((acc, s) => acc + (s.totalAmount || 0), 0);
+
+  // Filtro por texto de busca rápida
+  const filteredServices = services.filter((s) => {
+    if (!filterSearch) return true;
+    const term = filterSearch.toLowerCase();
+    return (
+      s.clientName.toLowerCase().includes(term) ||
+      s.code.includes(term) ||
+      s.clientPhone.includes(term)
+    );
+  });
 
   // Agrupamento dos serviços pelas etapas do Kanban
   const groupedOrders = {
-    RECEBIDO: services.filter((s) => normalizeStage(s.status) === "RECEBIDO"),
-    PASSANDO: services.filter((s) => normalizeStage(s.status) === "PASSANDO"),
-    PRONTO: services.filter((s) => normalizeStage(s.status) === "PRONTO"),
-    ENTREGUE: services.filter((s) => normalizeStage(s.status) === "ENTREGUE"),
+    RECEBIDO: filteredServices.filter((s) => normalizeStage(s.status) === "RECEBIDO"),
+    PASSANDO: filteredServices.filter((s) => normalizeStage(s.status) === "PASSANDO"),
+    PRONTO: filteredServices.filter((s) => normalizeStage(s.status) === "PRONTO"),
+    ENTREGUE: filteredServices.filter((s) => normalizeStage(s.status) === "ENTREGUE"),
   };
 
   return (
-    <div className="space-y-7 animate-fade-in w-full min-w-0">
-      {/* ── SAUDAÇÃO & CTAs ──────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-gradient-to-r from-indigo-50/70 via-sky-50/50 to-white p-5 sm:p-6 rounded-3xl border border-indigo-100/60 shadow-sm">
-        <div>
-          <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-indigo-100/70 text-indigo-700 text-xs font-semibold mb-1.5">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Painel Operacional</span>
+    <div className="space-y-5 animate-fade-in w-full min-w-0">
+      {/* ── BARRA SUPERIOR OPERACIONAL COM MÉTRICAS RÁPIDAS ─────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Peças a passar hoje */}
+        <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-xs flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
+            <Shirt className="w-5 h-5 text-indigo-600" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            {greeting}! 👋
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Controle os pedidos em tempo real desde o recebimento até a entrega.
-          </p>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-slate-500 truncate">Peças a passar hoje</p>
+            <p className="text-xl font-extrabold text-slate-900 leading-tight">
+              {pecasAPassarHoje} <span className="text-xs font-normal text-slate-400">peças</span>
+            </p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap flex-shrink-0">
+        {/* Pedidos em andamento */}
+        <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-xs flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center flex-shrink-0">
+            <Sparkles className="w-5 h-5 text-amber-600" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-slate-500 truncate">Pedidos em andamento</p>
+            <p className="text-xl font-extrabold text-slate-900 leading-tight">
+              {pedidosEmAndamento} <span className="text-xs font-normal text-slate-400">pedidos</span>
+            </p>
+          </div>
+        </div>
+
+        {/* Prontos aguardando entrega */}
+        <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-xs flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center flex-shrink-0">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-slate-500 truncate">Prontos p/ entrega</p>
+            <p className="text-xl font-extrabold text-slate-900 leading-tight">
+              {pedidosProntosAguardandoEntrega} <span className="text-xs font-normal text-slate-400">pedidos</span>
+            </p>
+          </div>
+        </div>
+
+        {/* Faturamento do dia */}
+        <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-xs flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center flex-shrink-0">
+            <DollarSign className="w-5 h-5 text-sky-600" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-slate-500 truncate">Faturamento hoje</p>
+            <p className="text-xl font-extrabold text-slate-900 leading-tight">
+              {formatCurrency(faturamentoDoDia)}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── BARRA DE AÇÃO OPERACIONAL E BUSCA ───────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-100 shadow-xs">
+        <div className="relative flex-1 sm:max-w-xs">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Filtrar por cliente ou código..."
+            value={filterSearch}
+            onChange={(e) => setFilterSearch(e.target.value)}
+            className="w-full h-9 pl-9 pr-3 text-xs bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-400"
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
           <Button
             variant="outline"
-            onClick={() => navigate("/clientes/novo")}
-            leftIcon={<Plus className="w-4 h-4" />}
+            size="sm"
+            onClick={loadServices}
+            leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
           >
-            Novo cliente
+            Atualizar
           </Button>
+
           <Button
-            onClick={() => navigate("/servicos/novo")}
+            size="sm"
+            onClick={() => setQuickOrderOpen(true)}
             leftIcon={<Plus className="w-4 h-4" />}
-            className="shadow-sm shadow-indigo-200"
+            className="bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200 font-bold"
           >
-            Novo pedido
+            + Nova Entrada de Roupas
           </Button>
         </div>
       </div>
 
-      {/* ── ALERTA DE ERRO DE CONEXÃO ──────────────────────────────────────── */}
+      {/* ── ERRO DE CONEXÃO ────────────────────────────────────────────────── */}
       {error && (
         <div className="p-4 rounded-2xl bg-red-50 border border-red-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-red-800">
           <div className="flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
             <div>
-              <p className="font-semibold text-sm">Falha na conexão com os dados</p>
+              <p className="font-semibold text-sm">Falha na conexão com a API de pedidos</p>
               <p className="text-xs text-red-700 mt-0.5">{error}</p>
             </div>
           </div>
           <Button
             variant="outline"
             size="sm"
-            onClick={loadData}
+            onClick={loadServices}
             leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
             className="border-red-200 hover:bg-red-100 text-red-800"
           >
@@ -268,205 +333,150 @@ export function DashboardPage() {
         </div>
       )}
 
-      {/* ── CARDS DE ESTATÍSTICAS RÁPIDAS ──────────────────────────────────── */}
+      {/* ── SELETOR DE ABAS NO MOBILE ───────────────────────────────────────── */}
+      <div className="flex lg:hidden gap-1.5 overflow-x-auto pb-1">
+        {KANBAN_STAGES.map((stage) => {
+          const count = groupedOrders[stage.id].length;
+          const isActive = activeTab === stage.id;
+          return (
+            <button
+              key={stage.id}
+              onClick={() => setActiveTab(stage.id)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+                isActive
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              <span>{stage.label}</span>
+              <span
+                className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+                  isActive ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                }`}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── FLUXO KANBAN DE PEDIDOS ────────────────────────────────────────── */}
       {loading ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <CardSkeleton />
-          <CardSkeleton />
-          <CardSkeleton />
-          <CardSkeleton />
-        </div>
+        <KanbanSkeleton />
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-          <StatCard
-            title="Recebidos"
-            value={String(groupedOrders.RECEBIDO.length)}
-            icon={Clock}
-            iconBg="bg-blue-50"
-            iconColor="text-blue-600"
-            subtitle="aguardando passar"
-            onClick={() => setActiveTab("RECEBIDO")}
-          />
-          <StatCard
-            title="Passando"
-            value={String(groupedOrders.PASSANDO.length)}
-            icon={Sparkles}
-            iconBg="bg-amber-50"
-            iconColor="text-amber-600"
-            subtitle="no vapor / ferro"
-            onClick={() => setActiveTab("PASSANDO")}
-          />
-          <StatCard
-            title="Prontos"
-            value={String(groupedOrders.PRONTO.length)}
-            icon={CheckCircle2}
-            iconBg="bg-emerald-50"
-            iconColor="text-emerald-600"
-            subtitle="aguardando retirada"
-            onClick={() => setActiveTab("PRONTO")}
-          />
-          <StatCard
-            title="Entregues"
-            value={String(groupedOrders.ENTREGUE.length)}
-            icon={Truck}
-            iconBg="bg-purple-50"
-            iconColor="text-purple-600"
-            subtitle="pedidos finalizados"
-            onClick={() => setActiveTab("ENTREGUE")}
-          />
-        </div>
-      )}
-
-      {/* ── SEÇÃO OPERACIONAL: FLUXO KANBAN DE PEDIDOS ─────────────────────── */}
-      <section className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-              <Columns className="w-5 h-5 text-indigo-600" />
-              <span>Fluxo Operacional de Pedidos</span>
-            </h2>
-            <p className="text-xs text-slate-500">
-              Acompanhe o status e avance os pedidos com um único clique.
-            </p>
-          </div>
-
-          {/* Abas no mobile e seletor rápido */}
-          <div className="flex lg:hidden gap-1.5 overflow-x-auto pb-1">
+        <>
+          {/* Desktop Kanban (4 Colunas) */}
+          <div className="hidden lg:grid lg:grid-cols-4 gap-3.5 items-start">
             {KANBAN_STAGES.map((stage) => {
-              const count = groupedOrders[stage.id].length;
-              const isActive = activeTab === stage.id;
+              const stageOrders = groupedOrders[stage.id];
+              const Icon = stage.icon;
+
               return (
-                <button
+                <div
                   key={stage.id}
-                  onClick={() => setActiveTab(stage.id)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 ${
-                    isActive
-                      ? "bg-indigo-600 text-white shadow-sm"
-                      : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
-                  }`}
+                  className="bg-slate-50/80 rounded-2xl p-3 border border-slate-200/80 flex flex-col gap-2.5 min-h-[460px]"
                 >
-                  <span>{stage.label}</span>
-                  <span
-                    className={`px-1.5 py-0.2 rounded-full text-[10px] ${
-                      isActive ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
-                    }`}
+                  {/* Cabeçalho da Coluna */}
+                  <div
+                    className={`flex items-center justify-between p-2.5 rounded-xl ${stage.colorClass.headerBg} border ${stage.colorClass.border}`}
                   >
-                    {count}
-                  </span>
-                </button>
+                    <div className="flex items-center gap-2">
+                      <Icon className="w-4 h-4" />
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wider">{stage.label}</p>
+                        <p className="text-[10px] opacity-75">{stage.sublabel}</p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-extrabold px-2 py-0.5 rounded-full bg-white/90 shadow-2xs">
+                      {stageOrders.length}
+                    </span>
+                  </div>
+
+                  {/* Lista de Cards da Coluna */}
+                  <div className="flex flex-col gap-2.5 overflow-y-auto max-h-[640px] pr-0.5">
+                    {stageOrders.length === 0 ? (
+                      <div className="py-12 px-3 text-center text-slate-400 bg-white/60 rounded-xl border border-dashed border-slate-200 flex flex-col items-center gap-2">
+                        <Icon className="w-5 h-5 text-slate-300" />
+                        <p className="text-xs font-medium">Nenhum pedido</p>
+                      </div>
+                    ) : (
+                      stageOrders.map((service) => (
+                        <OperationalOrderCard
+                          key={service.id}
+                          service={service}
+                          stage={stage}
+                          isUpdating={updatingId === service.id}
+                          onAdvance={handleAdvanceStatus}
+                          onNavigate={() => navigate(`/servicos/${service.id}`)}
+                        />
+                      ))
+                    )}
+                  </div>
+                </div>
               );
             })}
           </div>
-        </div>
 
-        {loading ? (
-          <KanbanSkeleton />
-        ) : (
-          <>
-            {/* Desktop Kanban (4 Colunas) */}
-            <div className="hidden lg:grid lg:grid-cols-4 gap-4 items-start">
-              {KANBAN_STAGES.map((stage) => {
-                const stageOrders = groupedOrders[stage.id];
-                const Icon = stage.icon;
+          {/* Mobile / Tablet: Visualização da Aba Selecionada */}
+          <div className="lg:hidden">
+            {(() => {
+              const currentStage = KANBAN_STAGES.find((s) => s.id === activeTab)!;
+              const stageOrders = groupedOrders[activeTab];
 
-                return (
-                  <div
-                    key={stage.id}
-                    className="bg-slate-50/80 rounded-3xl p-3.5 border border-slate-200/70 flex flex-col gap-3 min-h-[420px]"
-                  >
-                    {/* Header da Coluna */}
-                    <div
-                      className={`flex items-center justify-between p-3 rounded-2xl ${stage.colorClass.headerBg} border ${stage.colorClass.border}`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Icon className="w-4 h-4" />
-                        <div>
-                          <p className="text-xs font-bold uppercase tracking-wider">{stage.label}</p>
-                          <p className="text-[10px] opacity-75">{stage.sublabel}</p>
-                        </div>
-                      </div>
-                      <span className="text-xs font-extrabold px-2 py-0.5 rounded-full bg-white/80 shadow-xs">
-                        {stageOrders.length}
-                      </span>
+              return (
+                <div className="bg-slate-50/80 rounded-2xl p-3.5 border border-slate-200/80 flex flex-col gap-3">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-200/60">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2.5 h-2.5 rounded-full ${currentStage.colorClass.dot}`} />
+                      <h3 className="text-sm font-bold text-slate-800">
+                        {currentStage.label} ({stageOrders.length})
+                      </h3>
                     </div>
-
-                    {/* Lista de Cards da Coluna */}
-                    <div className="flex flex-col gap-3 overflow-y-auto max-h-[600px] pr-0.5">
-                      {stageOrders.length === 0 ? (
-                        <div className="py-12 px-3 text-center text-slate-400 bg-white/60 rounded-2xl border border-dashed border-slate-200 flex flex-col items-center gap-2">
-                          <Icon className="w-6 h-6 text-slate-300" />
-                          <p className="text-xs font-medium">Nenhum pedido nesta etapa</p>
-                        </div>
-                      ) : (
-                        stageOrders.map((service) => (
-                          <OrderCard
-                            key={service.id}
-                            service={service}
-                            stage={stage}
-                            isUpdating={updatingId === service.id}
-                            onAdvance={handleAdvanceStatus}
-                            onNavigate={() => navigate(`/servicos/${service.id}`)}
-                          />
-                        ))
-                      )}
-                    </div>
+                    <span className="text-xs text-slate-500">{currentStage.sublabel}</span>
                   </div>
-                );
-              })}
-            </div>
 
-            {/* Mobile / Tablet: Visualização da Aba Selecionada */}
-            <div className="lg:hidden">
-              {(() => {
-                const currentStage = KANBAN_STAGES.find((s) => s.id === activeTab)!;
-                const stageOrders = groupedOrders[activeTab];
-                return (
-                  <div className="bg-slate-50/80 rounded-3xl p-4 border border-slate-200/70 flex flex-col gap-3">
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-200/60">
-                      <div className="flex items-center gap-2">
-                        <span className={`w-2.5 h-2.5 rounded-full ${currentStage.colorClass.dot}`} />
-                        <h3 className="text-sm font-bold text-slate-800">
-                          {currentStage.label} ({stageOrders.length})
-                        </h3>
-                      </div>
-                      <span className="text-xs text-slate-500">{currentStage.sublabel}</span>
+                  {stageOrders.length === 0 ? (
+                    <EmptyState
+                      icon={currentStage.icon}
+                      title={`Nenhum pedido em ${currentStage.label}`}
+                      description="Quando houver novos pedidos nesta etapa eles aparecerão aqui."
+                      compact
+                    />
+                  ) : (
+                    <div className="flex flex-col gap-2.5">
+                      {stageOrders.map((service) => (
+                        <OperationalOrderCard
+                          key={service.id}
+                          service={service}
+                          stage={currentStage}
+                          isUpdating={updatingId === service.id}
+                          onAdvance={handleAdvanceStatus}
+                          onNavigate={() => navigate(`/servicos/${service.id}`)}
+                        />
+                      ))}
                     </div>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        </>
+      )}
 
-                    {stageOrders.length === 0 ? (
-                      <EmptyState
-                        icon={currentStage.icon}
-                        title={`Nenhum pedido em ${currentStage.label}`}
-                        description="Quando houver novos pedidos nesta etapa eles aparecerão aqui."
-                        compact
-                      />
-                    ) : (
-                      <div className="flex flex-col gap-3">
-                        {stageOrders.map((service) => (
-                          <OrderCard
-                            key={service.id}
-                            service={service}
-                            stage={currentStage}
-                            isUpdating={updatingId === service.id}
-                            onAdvance={handleAdvanceStatus}
-                            onNavigate={() => navigate(`/servicos/${service.id}`)}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
-            </div>
-          </>
-        )}
-      </section>
+      {/* ── MODAL DE COMANDA RÁPIDA ────────────────────────────────────────── */}
+      <QuickOrderModal
+        open={quickOrderOpen}
+        onClose={() => setQuickOrderOpen(false)}
+        onOrderCreated={loadServices}
+      />
     </div>
   );
 }
 
-// ─── Componente de Card de Pedido ───────────────────────────────────────────
+// ─── CARD OPERACIONAL DE PEDIDO ─────────────────────────────────────────────
 
-interface OrderCardProps {
+interface OperationalOrderCardProps {
   service: Service;
   stage: (typeof KANBAN_STAGES)[number];
   isUpdating: boolean;
@@ -474,100 +484,98 @@ interface OrderCardProps {
   onNavigate: () => void;
 }
 
-function OrderCard({
+function OperationalOrderCard({
   service,
   stage,
   isUpdating,
   onAdvance,
   onNavigate,
-}: OrderCardProps) {
-  const whatsAppUrl = getWhatsAppUrl(
-    service.clientPhone,
-    service.clientName,
-    service.code,
-    stage.id
-  );
+}: OperationalOrderCardProps) {
+  // Resumo de peças formatado (ex: "5 camisas, 2 calças")
+  const resumoPecas =
+    service.items && service.items.length > 0
+      ? service.items
+          .map((it) => `${it.quantity} ${it.clothingTypeName.toLowerCase()}`)
+          .join(", ")
+      : `${service.totalPieces} peças`;
+
+  // Link direto do WhatsApp Web com a mensagem exata solicitada
+  const whatsAppReadyUrl = getWhatsAppReadyUrl(service.clientPhone, service.clientName);
 
   return (
-    <div className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-sm hover:shadow-md transition-all flex flex-col gap-3 group">
-      {/* Topo: Código do pedido + Tag de Status */}
+    <div className="bg-white rounded-xl p-3 border border-slate-200/90 shadow-2xs hover:shadow-sm transition-all flex flex-col gap-2.5 group">
+      {/* Linha 1: Código + Status Tag */}
       <div className="flex items-center justify-between gap-2">
         <button
           onClick={onNavigate}
-          className="font-mono text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded-md transition-colors text-left"
+          className="font-mono text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded transition-colors text-left"
         >
           {formatServiceCode(service.code)}
         </button>
-        <span
-          className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${stage.colorClass.badge}`}
-        >
+        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${stage.colorClass.badge}`}>
           {stage.label}
         </span>
       </div>
 
-      {/* Cliente + Botão de WhatsApp */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <button
-            onClick={onNavigate}
-            className="text-sm font-bold text-slate-800 hover:text-indigo-600 transition-colors text-left truncate block w-full"
-          >
-            {service.clientName}
-          </button>
-          {service.clientPhone && (
-            <p className="text-[11px] text-slate-400 truncate">{service.clientPhone}</p>
-          )}
-        </div>
-
-        {service.clientPhone ? (
-          <a
-            href={whatsAppUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            title="Conversar com cliente no WhatsApp"
-            className="w-8 h-8 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-200/80 flex items-center justify-center flex-shrink-0 transition-colors shadow-2xs"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <MessageCircle className="w-4 h-4" />
-          </a>
-        ) : null}
-      </div>
-
-      {/* Resumo das Peças / Itens */}
-      <div className="bg-slate-50/80 rounded-xl p-2.5 text-xs text-slate-600 border border-slate-100">
-        <div className="flex items-center justify-between font-medium text-slate-700 mb-1">
-          <span className="flex items-center gap-1">
-            <Shirt className="w-3.5 h-3.5 text-slate-400" />
-            <span>Total de peças:</span>
-          </span>
-          <span className="font-bold text-indigo-700">{service.totalPieces} un</span>
-        </div>
-        {service.items && service.items.length > 0 && (
-          <p className="text-[11px] text-slate-500 truncate">
-            {service.items.map((it) => `${it.quantity}x ${it.clothingTypeName}`).join(", ")}
-          </p>
+      {/* Linha 2: Nome do Cliente */}
+      <div>
+        <button
+          onClick={onNavigate}
+          className="text-sm font-bold text-slate-800 hover:text-indigo-600 transition-colors text-left truncate block w-full leading-tight"
+        >
+          {service.clientName}
+        </button>
+        {service.clientPhone && (
+          <p className="text-[11px] text-slate-400 truncate mt-0.5">{service.clientPhone}</p>
         )}
       </div>
 
-      {/* Rodapé do Card: Valor + Previsão */}
-      <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-xs">
-        <div className="flex items-center gap-1 text-slate-500">
-          <Clock className="w-3.5 h-3.5 text-slate-400" />
-          <span>{service.expectedDeliveryAt ? formatDate(service.expectedDeliveryAt) : "Sem prazo"}</span>
-        </div>
-        <span className="font-extrabold text-slate-800 text-sm">
+      {/* Linha 3: Resumo de Peças */}
+      <div className="bg-slate-50 p-2 rounded-lg text-xs text-slate-600 border border-slate-100 flex items-start gap-1.5">
+        <Shirt className="w-3.5 h-3.5 text-slate-400 flex-shrink-0 mt-0.5" />
+        <span className="font-medium truncate flex-1 leading-snug" title={resumoPecas}>
+          {resumoPecas}
+        </span>
+      </div>
+
+      {/* Linha 4: Previsão e Valor Total */}
+      <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
+        <span className="text-slate-400 text-[11px]">
+          {service.expectedDeliveryAt ? formatDate(service.expectedDeliveryAt) : "Sem prazo"}
+        </span>
+        <span className="font-extrabold text-slate-900 text-sm">
           {formatCurrency(service.totalAmount)}
         </span>
       </div>
 
-      {/* Botão de Avanço Rápido de Status */}
+      {/* NO STATUS "PRONTO": Botão verde de WhatsApp com mensagem oficial */}
+      {stage.id === "PRONTO" && (
+        <a
+          href={whatsAppReadyUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => {
+            if (!service.clientPhone) {
+              e.preventDefault();
+              alert("Cliente sem telefone cadastrado.");
+            }
+          }}
+          className="w-full bg-[#25D366] hover:bg-[#1ebe5d] active:bg-[#1aa352] text-white text-xs font-bold py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-xs shadow-green-200"
+          title="Abrir WhatsApp com aviso de roupas prontas"
+        >
+          <MessageCircle className="w-4 h-4 flex-shrink-0" />
+          <span>Avisar no WhatsApp (Pronto!)</span>
+        </a>
+      )}
+
+      {/* Botão de avanço de status com 1 clique */}
       {stage.nextStatus && (
         <button
           disabled={isUpdating}
           onClick={() =>
             onAdvance(service, stage.nextStatus!.value, stage.nextStatus!.label)
           }
-          className={`w-full text-xs font-semibold py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-2xs ${
+          className={`w-full text-xs font-bold py-1.5 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-2xs ${
             stage.colorClass.button
           } ${isUpdating ? "opacity-60 cursor-not-allowed" : "hover:brightness-105 active:scale-98"}`}
         >
@@ -576,7 +584,7 @@ function OrderCard({
           ) : (
             <>
               <span>Mover para {stage.nextStatus.label}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="w-3 h-3" />
             </>
           )}
         </button>

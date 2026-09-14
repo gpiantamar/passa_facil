@@ -4,21 +4,23 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 
 const pageTitles: Record<string, string> = {
-  "/app": "Dashboard",
-  "/app/clientes": "Clientes",
-  "/app/clientes/novo": "Novo Cliente",
-  "/app/servicos": "Serviços",
-  "/app/servicos/novo": "Novo Serviço",
-  "/app/pagamentos": "Pagamentos",
-  "/app/relatorios": "Relatórios",
-  "/app/configuracoes": "Configurações",
+  "/": "Painel Operacional",
+  "/pedidos": "Fluxo de Pedidos",
+  "/servicos": "Fluxo de Pedidos",
+  "/servicos/novo": "Nova Entrada de Roupas",
+  "/clientes": "Clientes",
+  "/clientes/novo": "Novo Cliente",
+  "/tabela-precos": "Tabela de Preços",
+  "/pagamentos": "Pagamentos",
+  "/relatorios": "Relatórios Operacionais",
+  "/configuracoes": "Configurações",
 };
 
 function getPageTitle(pathname: string): string {
   if (pageTitles[pathname]) return pageTitles[pathname];
-  if (pathname.startsWith("/app/clientes/")) return "Detalhes do Cliente";
-  if (pathname.startsWith("/app/servicos/")) return "Detalhes do Serviço";
-  return "PassaFácil";
+  if (pathname.startsWith("/clientes/")) return "Detalhes do Cliente";
+  if (pathname.startsWith("/servicos/")) return "Detalhes do Pedido";
+  return "PassaFácil Operacional";
 }
 
 interface HeaderProps {
@@ -35,17 +37,16 @@ export function Header({ onMenuClick }: HeaderProps) {
   const handleLogout = () => {
     if (confirmLogout) {
       logout();
-      navigate("/entrar", { replace: true });
+      navigate("/login", { replace: true });
     } else {
       setConfirmLogout(true);
-      // Cancela confirmação após 3 segundos
       setTimeout(() => setConfirmLogout(false), 3000);
     }
   };
 
   return (
-    <header className="flex items-center h-14 px-4 sm:px-5 bg-white border-b border-slate-100 flex-shrink-0">
-      {/* Mobile menu toggle */}
+    <header className="flex items-center h-14 px-4 sm:px-5 bg-white border-b border-slate-200/80 flex-shrink-0">
+      {/* Botão de Menu Mobile */}
       <button
         onClick={onMenuClick}
         className="p-2 -ml-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors lg:hidden flex items-center justify-center flex-shrink-0"
@@ -54,27 +55,18 @@ export function Header({ onMenuClick }: HeaderProps) {
         <Menu className="w-5 h-5 flex-shrink-0" />
       </button>
 
-      {/* Title (mobile) */}
-      <h1 className="text-sm font-semibold text-slate-800 ml-2 lg:hidden truncate">
+      {/* Título da Página no Header */}
+      <h1 className="text-sm sm:text-base font-bold text-slate-900 ml-2 truncate">
         {title}
       </h1>
 
-      {/* Spacer */}
       <div className="flex-1" />
 
-      {/* Notifications */}
-      <button
-        className="relative p-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors flex items-center justify-center flex-shrink-0"
-        aria-label="Notificações"
-      >
-        <Bell className="w-5 h-5 flex-shrink-0" />
-      </button>
-
-      {/* Logout button */}
+      {/* Botão Sair */}
       <button
         onClick={handleLogout}
-        title={confirmLogout ? "Clique novamente para confirmar" : "Sair"}
-        className={`ml-1 p-2 rounded-xl transition-all flex items-center gap-1.5 flex-shrink-0 text-xs font-medium
+        title={confirmLogout ? "Clique para confirmar saída" : "Sair do sistema"}
+        className={`ml-1 p-2 rounded-xl transition-all flex items-center gap-1.5 flex-shrink-0 text-xs font-semibold
           ${confirmLogout
             ? "bg-red-50 text-red-600 hover:bg-red-100 px-2.5"
             : "text-slate-500 hover:bg-slate-100"
@@ -85,9 +77,9 @@ export function Header({ onMenuClick }: HeaderProps) {
         {confirmLogout && <span>Confirmar</span>}
       </button>
 
-      {/* Avatar */}
-      <div className="ml-2 w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-        <span className="text-xs font-bold text-indigo-700">P</span>
+      {/* Avatar do Operador */}
+      <div className="ml-2 w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 border border-indigo-200">
+        <span className="text-xs font-bold text-indigo-700">OP</span>
       </div>
     </header>
   );

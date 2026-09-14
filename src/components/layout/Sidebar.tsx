@@ -4,22 +4,24 @@ import {
   LayoutDashboard,
   Users,
   Shirt,
-  CreditCard,
+  Tag,
   BarChart3,
   Settings,
   Wind,
   LogOut,
   X,
+  CreditCard,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 
 const navItems = [
-  { to: "/app", label: "Dashboard", icon: LayoutDashboard, end: true },
-  { to: "/app/clientes", label: "Clientes", icon: Users },
-  { to: "/app/servicos", label: "Serviços", icon: Shirt },
-  { to: "/app/pagamentos", label: "Pagamentos", icon: CreditCard },
-  { to: "/app/relatorios", label: "Relatórios", icon: BarChart3 },
-  { to: "/app/configuracoes", label: "Configurações", icon: Settings },
+  { to: "/", label: "Painel Operacional", icon: LayoutDashboard, end: true },
+  { to: "/pedidos", label: "Fluxo de Pedidos", icon: Shirt },
+  { to: "/clientes", label: "Clientes", icon: Users },
+  { to: "/tabela-precos", label: "Tabela de Preços", icon: Tag },
+  { to: "/pagamentos", label: "Pagamentos", icon: CreditCard },
+  { to: "/relatorios", label: "Relatórios", icon: BarChart3 },
+  { to: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 
 interface SidebarProps {
@@ -33,21 +35,20 @@ export function Sidebar({ open, onClose }: SidebarProps) {
 
   const handleLogout = () => {
     logout();
-    navigate("/entrar", { replace: true });
+    navigate("/login", { replace: true });
   };
 
   const content = (
-    <aside className="flex flex-col h-full bg-white border-r border-slate-100">
-      {/* Logo */}
-      <div className="flex items-center gap-3 px-5 py-5 border-b border-slate-100">
-        <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center flex-shrink-0">
+    <aside className="flex flex-col h-full bg-white border-r border-slate-200/80">
+      {/* Logo e Identificação Operacional */}
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
+        <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center flex-shrink-0 shadow-xs shadow-indigo-200">
           <Wind className="w-5 h-5 text-white" />
         </div>
-        <div>
-          <p className="text-sm font-bold text-slate-800 leading-tight">PassaFácil</p>
-          <p className="text-xs text-slate-500 leading-tight">Gestão de passadoria</p>
+        <div className="min-w-0">
+          <p className="text-sm font-extrabold text-slate-900 leading-tight">PassaFácil</p>
+          <p className="text-[11px] font-semibold text-indigo-600 uppercase tracking-wider">Painel Operacional</p>
         </div>
-        {/* Mobile close button */}
         {onClose && (
           <button
             onClick={onClose}
@@ -59,9 +60,9 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         )}
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 py-4 px-3 overflow-y-auto" aria-label="Menu principal">
-        <ul className="space-y-0.5">
+      {/* Navegação Principal */}
+      <nav className="flex-1 py-4 px-3 overflow-y-auto" aria-label="Menu operacional">
+        <ul className="space-y-1">
           {navItems.map((item) => (
             <li key={item.to}>
               <NavLink
@@ -69,13 +70,12 @@ export function Sidebar({ open, onClose }: SidebarProps) {
                 end={item.end}
                 onClick={onClose}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
+                  `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-150 ${
                     isActive
-                      ? "bg-indigo-50 text-indigo-700"
-                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-800"
+                      ? "bg-indigo-50 text-indigo-700 shadow-2xs"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                   }`
                 }
-                aria-current={undefined}
               >
                 {({ isActive }) => (
                   <>
@@ -93,26 +93,26 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         </ul>
       </nav>
 
-      {/* Footer */}
-      <div className="px-3 py-4 border-t border-slate-100">
-        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl">
+      {/* Rodapé do Usuário Operador */}
+      <div className="px-3 py-3 border-t border-slate-100 bg-slate-50/50">
+        <div className="flex items-center gap-3 px-2 py-1.5 rounded-xl">
           <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-            <span className="text-xs font-bold text-indigo-700">P</span>
+            <span className="text-xs font-bold text-indigo-700">OP</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-slate-700 leading-tight truncate">
-              Usuário
+            <p className="text-xs font-bold text-slate-800 leading-tight truncate">
+              Operador
             </p>
-            <div className="flex items-center gap-1 mt-0.5">
+            <div className="flex items-center gap-1.5 mt-0.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
-              <p className="text-xs text-slate-500">Online</p>
+              <p className="text-[11px] text-slate-500">Sistema Conectado</p>
             </div>
           </div>
           <button
             onClick={handleLogout}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors flex items-center justify-center flex-shrink-0"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors flex items-center justify-center flex-shrink-0"
             aria-label="Sair"
-            title="Sair"
+            title="Sair do sistema"
           >
             <LogOut className="w-4 h-4 flex-shrink-0" />
           </button>
@@ -123,25 +123,21 @@ export function Sidebar({ open, onClose }: SidebarProps) {
 
   return (
     <>
-      {/* Desktop sidebar */}
-      <div className="hidden lg:flex flex-col w-60 flex-shrink-0 h-full">
+      <div className="hidden lg:flex flex-col w-56 flex-shrink-0 h-full">
         {content}
       </div>
 
-      {/* Mobile drawer */}
       {open !== undefined && (
         <>
-          {/* Overlay */}
           <div
-            className={`fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300 ${
+            className={`fixed inset-0 bg-black/40 backdrop-blur-xs z-40 lg:hidden transition-opacity duration-300 ${
               open ? "opacity-100" : "opacity-0 pointer-events-none"
             }`}
             onClick={onClose}
             aria-hidden="true"
           />
-          {/* Drawer */}
           <div
-            className={`fixed inset-y-0 left-0 z-50 w-72 lg:hidden transform transition-transform duration-300 ${
+            className={`fixed inset-y-0 left-0 z-50 w-64 lg:hidden transform transition-transform duration-300 ${
               open ? "translate-x-0" : "-translate-x-full"
             }`}
           >

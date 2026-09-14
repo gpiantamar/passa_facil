@@ -15,8 +15,8 @@ function UnauthorizedWatcher() {
     const handle = () => {
       logout();
       // Redireciona sem usar o router (evita loops)
-      if (!window.location.pathname.startsWith("/entrar")) {
-        window.location.replace("/entrar");
+      if (!window.location.pathname.startsWith("/login")) {
+        window.location.replace("/login");
       }
     };
     window.addEventListener("pf:unauthorized", handle);
