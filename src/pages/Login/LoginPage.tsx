@@ -23,8 +23,8 @@ export function LoginPage() {
   } = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "admin@passafacil.com.br",
-      password: "123456",
+      email: "",
+      password: "",
     },
   });
 
@@ -38,8 +38,8 @@ export function LoginPage() {
       <div className="w-full max-w-sm animate-fade-in">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200 mb-4">
-            <Wind className="w-7 h-7 text-white" />
+          <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200 mb-4 flex-shrink-0">
+            <Wind className="w-7 h-7 text-white flex-shrink-0" />
           </div>
           <h1 className="text-2xl font-bold text-slate-800">PassaFácil</h1>
           <p className="text-sm text-slate-500 mt-1">Gestão simples para sua passadoria.</p>
@@ -74,7 +74,7 @@ export function LoginPage() {
               fullWidth
               size="lg"
               loading={isSubmitting}
-              rightIcon={<ArrowRight className="w-4 h-4" />}
+              rightIcon={<ArrowRight className="w-4 h-4 flex-shrink-0" />}
               className="mt-1"
             >
               Entrar

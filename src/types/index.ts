@@ -5,9 +5,11 @@
 export type ServiceStatus =
   | "RECEBIDO"
   | "EM_ANDAMENTO"
+  | "PASSANDO"
   | "PRONTO"
   | "AGUARDANDO_PAGAMENTO"
-  | "FINALIZADO";
+  | "FINALIZADO"
+  | "ENTREGUE";
 
 export type PaymentStatus = "PAGO" | "PENDENTE" | "PARCIAL";
 

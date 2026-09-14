@@ -34,7 +34,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             ref={ref}
             id={selectId}
             className={`
-              w-full h-10 rounded-xl border bg-white pl-3 pr-9 text-sm text-slate-800
+              w-full h-10 rounded-xl border bg-white pl-3.5 pr-10 text-sm text-slate-800
               appearance-none cursor-pointer
               transition-colors duration-150
               ${
@@ -59,7 +59,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
               </option>
             ))}
           </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+          <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none flex-shrink-0" aria-hidden="true" />
         </div>
         {hint && !error && <p className="text-xs text-slate-500">{hint}</p>}
         {error && (

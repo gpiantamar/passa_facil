@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Plus, Shirt } from "lucide-react";
+import { Plus, Shirt, AlertCircle, RefreshCw } from "lucide-react";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { SearchInput } from "../../components/ui/SearchInput";
 import { Button } from "../../components/ui/Button";
 import { ServiceStatusBadge } from "../../components/ui/ServiceStatusBadge";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { Loading } from "../../components/ui/Loading";
-import { serviceService } from "../../services/serviceService";
+import { getPedidos } from "../../services/api.js";
 import type { Service, ServiceStatus } from "../../types";
 import {
   formatCurrency,
@@ -16,45 +16,127 @@ import {
 } from "../../utils/formatters";
 import { useDebounce } from "../../hooks/useDebounce";
 
-const statusOptions: { value: ServiceStatus | "TODOS"; label: string }[] = [
+const statusOptions: { value: string; label: string }[] = [
   { value: "TODOS", label: "Todos" },
   { value: "RECEBIDO", label: "Recebido" },
   { value: "EM_ANDAMENTO", label: "Em andamento" },
   { value: "PRONTO", label: "Pronto" },
-  { value: "AGUARDANDO_PAGAMENTO", label: "Aguardando pagamento" },
-  { value: "FINALIZADO", label: "Finalizado" },
+  { value: "ENTREGUE", label: "Entregue" },
 ];
+
+function mapPedidoToService(p: any): Service {
+  const code = String(p.id).padStart(6, "0");
+  const items = (p.itens || []).map((item: any) => ({
+    id: String(item.id),
+    serviceId: String(p.id),
+    clothingTypeId: String(item.servicoId),
+    clothingTypeName: item.servico?.nome || `Item #${item.servicoId}`,
+    quantity: item.quantidade,
+    pricePerUnit: item.valorUnit,
+    subtotal: item.quantidade * item.valorUnit,
+  }));
+  const totalPieces = items.reduce((sum: number, it: any) => sum + (it.quantity || 0), 0);
+
+  let status: ServiceStatus = "RECEBIDO";
+  const raw = (p.status || "").toLowerCase();
+  if (raw === "passando" || raw === "em andamento" || raw === "em_andamento") {
+    status = "EM_ANDAMENTO";
+  } else if (raw === "pronto") {
+    status = "PRONTO";
+  } else if (raw === "entregue") {
+    status = "ENTREGUE";
+  } else if (raw === "finalizado") {
+    status = "FINALIZADO";
+  } else if (raw === "aguardando_pagamento") {
+    status = "AGUARDANDO_PAGAMENTO";
+  } else {
+    status = "RECEBIDO";
+  }
+
+  return {
+    id: String(p.id),
+    code,
+    clientId: String(p.clienteId),
+    clientName: p.cliente?.nome || "Cliente",
+    clientPhone: p.cliente?.telefone || "",
+    status,
+    receivedAt: p.criadoEm ? p.criadoEm.split("T")[0] : new Date().toISOString().split("T")[0],
+    expectedDeliveryAt: p.previsaoPara ? p.previsaoPara.split("T")[0] : "",
+    deliveredAt: raw === "entregue" || raw === "finalizado" ? (p.criadoEm ? p.criadoEm.split("T")[0] : undefined) : undefined,
+    items,
+    totalPieces,
+    totalAmount: p.valorTotal || 0,
+    paidAmount: 0,
+    notes: p.observacoes || undefined,
+    paymentStatus: "PENDENTE",
+  };
+}
 
 export function ServicesPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const initialStatus = (searchParams.get("status") as ServiceStatus | null) ?? "TODOS";
+  const initialStatus = searchParams.get("status") ?? "TODOS";
 
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<ServiceStatus | "TODOS">(initialStatus);
+  const [status, setStatus] = useState<string>(initialStatus);
   const debouncedSearch = useDebounce(search, 300);
 
-  useEffect(() => {
+  const fetchPedidos = useCallback(async () => {
     setLoading(true);
-    serviceService
-      .getAll({ search: debouncedSearch, status })
-      .then(setServices)
-      .finally(() => setLoading(false));
-  }, [debouncedSearch, status]);
+    setError(null);
+    try {
+      const data = await getPedidos();
+      const mapped = (data || []).map(mapPedidoToService);
+      setServices(mapped);
+    } catch (err: any) {
+      console.error("Erro ao carregar pedidos:", err);
+      setError(
+        err?.message ||
+          "Não foi possível buscar os pedidos. Verifique se o servidor está rodando em http://localhost:3333."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPedidos();
+  }, [fetchPedidos]);
+
+  const filteredServices = services.filter((s) => {
+    if (search) {
+      const term = search.toLowerCase();
+      const matchSearch =
+        s.clientName.toLowerCase().includes(term) ||
+        s.code.includes(term) ||
+        s.id.includes(term);
+      if (!matchSearch) return false;
+    }
+
+    if (status !== "TODOS") {
+      if (status === "EM_ANDAMENTO") {
+        return s.status === "EM_ANDAMENTO" || s.status === "PASSANDO";
+      }
+      return s.status === status;
+    }
+
+    return true;
+  });
 
   return (
     <div className="animate-fade-in">
       <PageHeader
-        title="Serviços"
-        subtitle="Controle todos os serviços da passadoria."
+        title="Pedidos & Serviços"
+        subtitle="Acompanhe todos os pedidos e seus status em tempo real."
         actions={
           <Button
             onClick={() => navigate("/servicos/novo")}
-            leftIcon={<Plus className="w-4 h-4" />}
+            leftIcon={<Plus className="w-4 h-4 flex-shrink-0" />}
           >
-            Novo serviço
+            Novo pedido
           </Button>
         }
       />
@@ -84,25 +166,47 @@ export function ServicesPage() {
         </div>
       </div>
 
+      {/* Erro amigável */}
+      {error && (
+        <div className="mb-4 p-4 rounded-2xl bg-red-50 border border-red-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-red-800">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+            <div>
+              <p className="font-semibold text-sm">Falha na conexão com a API de pedidos</p>
+              <p className="text-xs text-red-700 mt-0.5">{error}</p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchPedidos}
+            leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
+            className="border-red-200 hover:bg-red-100 text-red-800"
+          >
+            Tentar novamente
+          </Button>
+        </div>
+      )}
+
       {loading ? (
         <Loading />
-      ) : services.length === 0 ? (
+      ) : filteredServices.length === 0 ? (
         <EmptyState
           icon={Shirt}
-          title="Nenhum serviço encontrado."
+          title="Nenhum pedido encontrado."
           description={
             debouncedSearch || status !== "TODOS"
               ? "Tente outros filtros."
-              : "Crie o primeiro serviço."
+              : "Cadastre o primeiro pedido no sistema."
           }
           action={
             !debouncedSearch && status === "TODOS" ? (
               <Button
                 onClick={() => navigate("/servicos/novo")}
-                leftIcon={<Plus className="w-4 h-4" />}
+                leftIcon={<Plus className="w-4 h-4 flex-shrink-0" />}
                 size="sm"
               >
-                Novo serviço
+                Novo pedido
               </Button>
             ) : undefined
           }
@@ -110,48 +214,53 @@ export function ServicesPage() {
       ) : (
         <>
           {/* Desktop table */}
-          <div className="hidden sm:block bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="hidden sm:block bg-white rounded-2xl border border-slate-100 shadow-sm overflow-x-auto w-full">
+            <table className="w-full text-sm min-w-[650px]">
               <thead className="bg-slate-50 border-b border-slate-100">
                 <tr>
                   <th className="px-5 py-3 text-left text-xs font-medium text-slate-500">Código</th>
                   <th className="px-5 py-3 text-left text-xs font-medium text-slate-500">Cliente</th>
                   <th className="px-5 py-3 text-left text-xs font-medium text-slate-500">Recebido</th>
-                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-500">Entrega</th>
+                  <th className="px-5 py-3 text-left text-xs font-medium text-slate-500">Entrega prevista</th>
                   <th className="px-5 py-3 text-right text-xs font-medium text-slate-500">Peças</th>
-                  <th className="px-5 py-3 text-right text-xs font-medium text-slate-500">Valor</th>
+                  <th className="px-5 py-3 text-right text-xs font-medium text-slate-500">Valor Total</th>
                   <th className="px-5 py-3 text-right text-xs font-medium text-slate-500">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {services.map((service) => (
+                {filteredServices.map((service) => (
                   <tr
                     key={service.id}
                     onClick={() => navigate(`/servicos/${service.id}`)}
                     className="hover:bg-slate-50 cursor-pointer transition-colors"
                   >
                     <td className="px-5 py-3.5">
-                      <span className="font-mono text-xs text-slate-500">
+                      <span className="font-mono text-xs text-indigo-600 font-semibold bg-indigo-50 px-2 py-0.5 rounded-md">
                         {formatServiceCode(service.code)}
                       </span>
                     </td>
                     <td className="px-5 py-3.5 font-medium text-slate-800">
-                      {service.clientName}
+                      <div>{service.clientName}</div>
+                      {service.clientPhone && (
+                        <div className="text-xs text-slate-400 font-normal">{service.clientPhone}</div>
+                      )}
                     </td>
                     <td className="px-5 py-3.5 text-slate-500 text-xs">
                       {formatDate(service.receivedAt)}
                     </td>
                     <td className="px-5 py-3.5 text-slate-500 text-xs">
-                      {formatDate(service.expectedDeliveryAt)}
+                      {service.expectedDeliveryAt
+                        ? formatDate(service.expectedDeliveryAt)
+                        : "—"}
                     </td>
-                    <td className="px-5 py-3.5 text-right text-slate-600">
-                      {service.totalPieces}
+                    <td className="px-5 py-3.5 text-right text-slate-700">
+                      {service.totalPieces} un
                     </td>
                     <td className="px-5 py-3.5 text-right font-semibold text-slate-800">
                       {formatCurrency(service.totalAmount)}
                     </td>
                     <td className="px-5 py-3.5 text-right">
-                      <ServiceStatusBadge status={service.status} size="sm" />
+                      <ServiceStatusBadge status={service.status} />
                     </td>
                   </tr>
                 ))}
@@ -161,29 +270,26 @@ export function ServicesPage() {
 
           {/* Mobile cards */}
           <div className="sm:hidden flex flex-col gap-3">
-            {services.map((service) => (
+            {filteredServices.map((service) => (
               <button
                 key={service.id}
                 onClick={() => navigate(`/servicos/${service.id}`)}
-                className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 text-left w-full"
+                className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 text-left w-full hover:shadow-md transition-shadow cursor-pointer"
               >
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono text-slate-400">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div>
+                    <span className="font-mono text-xs text-indigo-600 font-semibold bg-indigo-50 px-1.5 py-0.5 rounded-md">
                       {formatServiceCode(service.code)}
                     </span>
-                    <ServiceStatusBadge status={service.status} size="sm" />
+                    <p className="font-semibold text-slate-800 mt-1">{service.clientName}</p>
                   </div>
-                  <span className="text-sm font-bold text-slate-800">
+                  <ServiceStatusBadge status={service.status} size="sm" />
+                </div>
+                <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-50">
+                  <span>{service.totalPieces} peça(s)</span>
+                  <span className="font-bold text-slate-800 text-sm">
                     {formatCurrency(service.totalAmount)}
                   </span>
-                </div>
-                <p className="text-sm font-semibold text-slate-800 mb-1">
-                  {service.clientName}
-                </p>
-                <div className="flex gap-3 text-xs text-slate-500">
-                  <span>{service.totalPieces} peças</span>
-                  <span>Entrega: {formatDate(service.expectedDeliveryAt)}</span>
                 </div>
               </button>
             ))}

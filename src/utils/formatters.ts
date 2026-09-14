@@ -57,29 +57,38 @@ export function formatPhone(phone: string): string {
 // SERVICE STATUS
 // =============================================
 
-export function formatServiceStatus(status: ServiceStatus): string {
-  const labels: Record<ServiceStatus, string> = {
+export function formatServiceStatus(status: ServiceStatus | string): string {
+  const norm = (status || "").toUpperCase();
+  const labels: Record<string, string> = {
     RECEBIDO: "Recebido",
     EM_ANDAMENTO: "Em andamento",
+    PASSANDO: "Passando",
     PRONTO: "Pronto",
     AGUARDANDO_PAGAMENTO: "Aguardando pagamento",
     FINALIZADO: "Finalizado",
+    ENTREGUE: "Entregue",
   };
-  return labels[status] ?? status;
+  return labels[norm] ?? status;
 }
 
-export function getServiceStatusColor(status: ServiceStatus): {
+export function getServiceStatusColor(status: ServiceStatus | string): {
   bg: string;
   text: string;
   dot: string;
 } {
-  const colors: Record<ServiceStatus, { bg: string; text: string; dot: string }> = {
+  const norm = (status || "").toUpperCase();
+  const colors: Record<string, { bg: string; text: string; dot: string }> = {
     RECEBIDO: {
       bg: "bg-blue-50",
       text: "text-blue-700",
       dot: "bg-blue-500",
     },
     EM_ANDAMENTO: {
+      bg: "bg-amber-50",
+      text: "text-amber-700",
+      dot: "bg-amber-500",
+    },
+    PASSANDO: {
       bg: "bg-amber-50",
       text: "text-amber-700",
       dot: "bg-amber-500",
@@ -99,8 +108,13 @@ export function getServiceStatusColor(status: ServiceStatus): {
       text: "text-slate-600",
       dot: "bg-slate-400",
     },
+    ENTREGUE: {
+      bg: "bg-purple-50",
+      text: "text-purple-700",
+      dot: "bg-purple-500",
+    },
   };
-  return colors[status] ?? { bg: "bg-gray-100", text: "text-gray-600", dot: "bg-gray-400" };
+  return colors[norm] ?? { bg: "bg-gray-100", text: "text-gray-600", dot: "bg-gray-400" };
 }
 
 // =============================================

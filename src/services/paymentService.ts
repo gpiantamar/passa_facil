@@ -1,7 +1,6 @@
 import type { Payment, NewPaymentForm } from "../types";
-import { mockPayments } from "../mocks/payments";
 
-let payments = [...mockPayments];
+let payments: Payment[] = [];
 
 export const paymentService = {
   async getAll(): Promise<Payment[]> {

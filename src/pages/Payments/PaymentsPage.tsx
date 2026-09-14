@@ -176,8 +176,8 @@ export function PaymentsPage() {
         ) : (
           <>
             {/* Desktop table */}
-            <div className="hidden sm:block overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="hidden sm:block overflow-x-auto w-full">
+              <table className="w-full text-sm min-w-[550px]">
                 <thead>
                   <tr className="border-b border-slate-100">
                     <th className="pb-2 text-left text-xs text-slate-500 font-medium">Cliente</th>
@@ -223,7 +223,7 @@ export function PaymentsPage() {
                 <button
                   key={payment.id}
                   onClick={() => navigate(`/servicos/${payment.serviceId}`)}
-                  className="flex items-center justify-between gap-3 py-3 text-left w-full"
+                  className="flex items-center justify-between gap-3 py-3 text-left w-full cursor-pointer"
                 >
                   <div>
                     <p className="text-sm font-semibold text-slate-800">{payment.clientName}</p>

@@ -23,9 +23,9 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             {props.required && <span className="text-red-500 ml-1">*</span>}
           </label>
         )}
-        <div className="relative">
+        <div className="relative flex items-center">
           {leftIcon && (
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none flex items-center justify-center flex-shrink-0 w-4 h-4" aria-hidden="true">
               {leftIcon}
             </span>
           )}
@@ -33,11 +33,11 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             className={`
-              w-full h-10 rounded-xl border bg-white px-3 text-sm text-slate-800
+              w-full h-10 rounded-xl border bg-white text-sm text-slate-800
               placeholder:text-slate-400
               transition-colors duration-150
-              ${leftIcon ? "pl-9" : ""}
-              ${rightIcon ? "pr-9" : ""}
+              ${leftIcon ? "pl-10" : "pl-3.5"}
+              ${rightIcon ? "pr-10" : "pr-3.5"}
               ${
                 error
                   ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
@@ -50,7 +50,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             {...props}
           />
           {rightIcon && (
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 flex items-center justify-center flex-shrink-0 w-4 h-4">
               {rightIcon}
             </span>
           )}

@@ -63,10 +63,10 @@ export function Modal({ open, onClose, title, children, size = "md" }: ModalProp
             </h2>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors flex items-center justify-center flex-shrink-0"
               aria-label="Fechar modal"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4 flex-shrink-0" />
             </button>
           </div>
         )}

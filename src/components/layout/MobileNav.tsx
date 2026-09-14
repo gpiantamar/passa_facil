@@ -29,8 +29,8 @@ export function MobileNav() {
         >
           {({ isActive }) => (
             <>
-              <LayoutDashboard className={`w-5 h-5 ${isActive ? "text-indigo-600" : "text-slate-400"}`} />
-              <span>Início</span>
+              <LayoutDashboard className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-indigo-600" : "text-slate-400"}`} />
+              <span className="truncate">Início</span>
             </>
           )}
         </NavLink>
@@ -46,8 +46,8 @@ export function MobileNav() {
         >
           {({ isActive }) => (
             <>
-              <Users className={`w-5 h-5 ${isActive ? "text-indigo-600" : "text-slate-400"}`} />
-              <span>Clientes</span>
+              <Users className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-indigo-600" : "text-slate-400"}`} />
+              <span className="truncate">Clientes</span>
             </>
           )}
         </NavLink>
@@ -56,10 +56,10 @@ export function MobileNav() {
         <div className="flex-1 flex items-center justify-center py-1">
           <button
             onClick={() => navigate("/servicos/novo")}
-            className="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:bg-indigo-800 transition-all"
+            className="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:bg-indigo-800 transition-all flex-shrink-0 cursor-pointer"
             aria-label="Novo serviço"
           >
-            <Plus className="w-6 h-6 text-white" />
+            <Plus className="w-6 h-6 text-white flex-shrink-0" />
           </button>
         </div>
 
@@ -74,8 +74,8 @@ export function MobileNav() {
         >
           {({ isActive }) => (
             <>
-              <CreditCard className={`w-5 h-5 ${isActive ? "text-indigo-600" : "text-slate-400"}`} />
-              <span>Pagamentos</span>
+              <CreditCard className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-indigo-600" : "text-slate-400"}`} />
+              <span className="truncate">Pagamentos</span>
             </>
           )}
         </NavLink>
@@ -91,8 +91,8 @@ export function MobileNav() {
         >
           {({ isActive }) => (
             <>
-              <MoreHorizontal className={`w-5 h-5 ${isActive ? "text-indigo-600" : "text-slate-400"}`} />
-              <span>Mais</span>
+              <MoreHorizontal className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-indigo-600" : "text-slate-400"}`} />
+              <span className="truncate">Mais</span>
             </>
           )}
         </NavLink>

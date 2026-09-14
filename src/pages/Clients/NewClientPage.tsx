@@ -7,7 +7,7 @@ import { Input } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { newClientSchema, type NewClientSchema } from "../../utils/validators";
-import { clientService } from "../../services/clientService";
+import { criarCliente } from "../../services/api.js";
 import { useToastContext } from "../../lib/toastContext";
 
 export function NewClientPage() {
@@ -24,11 +24,19 @@ export function NewClientPage() {
 
   const onSubmit = async (data: NewClientSchema) => {
     try {
-      await clientService.create(data);
+      await criarCliente({
+        nome: data.name,
+        telefone: data.phone,
+        endereco: data.address || undefined,
+      });
       addToast("Cliente cadastrado com sucesso.", "success");
       navigate("/clientes");
-    } catch {
-      addToast("Erro ao cadastrar cliente.", "error");
+    } catch (err: any) {
+      console.error("Erro ao cadastrar cliente:", err);
+      addToast(
+        err?.message || "Não foi possível cadastrar o cliente. Verifique a conexão com o servidor.",
+        "error"
+      );
     }
   };
 

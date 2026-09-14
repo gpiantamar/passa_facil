@@ -52,7 +52,7 @@ export function Button({
       disabled={isDisabled}
       className={`
         inline-flex items-center justify-center font-medium rounded-xl
-        transition-all duration-150 cursor-pointer
+        transition-all duration-150 cursor-pointer whitespace-nowrap
         disabled:opacity-50 disabled:cursor-not-allowed
         ${variantClasses[variant]}
         ${sizeClasses[size]}
@@ -61,12 +61,18 @@ export function Button({
       `.trim()}
     >
       {loading ? (
-        <Loader2 className="w-4 h-4 animate-spin" />
-      ) : (
-        leftIcon
-      )}
-      {children}
-      {!loading && rightIcon}
+        <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />
+      ) : leftIcon ? (
+        <span className="inline-flex items-center justify-center flex-shrink-0" aria-hidden="true">
+          {leftIcon}
+        </span>
+      ) : null}
+      <span className="truncate">{children}</span>
+      {!loading && rightIcon ? (
+        <span className="inline-flex items-center justify-center flex-shrink-0" aria-hidden="true">
+          {rightIcon}
+        </span>
+      ) : null}
     </button>
   );
 }

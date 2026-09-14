@@ -1,6 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { CheckCircle2, Circle, Send } from "lucide-react";
+import {
+  CheckCircle2,
+  Circle,
+  Send,
+  AlertCircle,
+  RefreshCw,
+  Loader2,
+  Package,
+} from "lucide-react";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
@@ -12,6 +20,7 @@ import { Modal } from "../../components/ui/Modal";
 import { ShareServiceModal } from "../../components/ui/ShareServiceModal";
 import { serviceService } from "../../services/serviceService";
 import { paymentService } from "../../services/paymentService";
+import { atualizarStatusPedido } from "../../services/api.js";
 import type { Service, ServiceStatus } from "../../types";
 import {
   formatCurrency,
@@ -26,21 +35,13 @@ import { newPaymentSchema, type NewPaymentSchema } from "../../utils/validators"
 import { Input } from "../../components/ui/Input";
 import { Select } from "../../components/ui/Select";
 
-const statusFlow: { status: ServiceStatus; label: string }[] = [
-  { status: "RECEBIDO", label: "Recebido" },
-  { status: "EM_ANDAMENTO", label: "Em andamento" },
-  { status: "PRONTO", label: "Pronto" },
-  { status: "AGUARDANDO_PAGAMENTO", label: "Aguardando pagamento" },
-  { status: "FINALIZADO", label: "Finalizado" },
+// As 4 opções de status solicitadas pelo requisito
+const availableStatuses = [
+  { value: "recebido", internal: "RECEBIDO", label: "Recebido", desc: "Pedido recebido" },
+  { value: "em andamento", internal: "EM_ANDAMENTO", label: "Em andamento", desc: "Passando roupas" },
+  { value: "pronto", internal: "PRONTO", label: "Pronto", desc: "Pronto p/ retirada" },
+  { value: "entregue", internal: "ENTREGUE", label: "Entregue", desc: "Entregue ao cliente" },
 ];
-
-const statusOrder: Record<ServiceStatus, number> = {
-  RECEBIDO: 0,
-  EM_ANDAMENTO: 1,
-  PRONTO: 2,
-  AGUARDANDO_PAGAMENTO: 3,
-  FINALIZADO: 4,
-};
 
 const paymentMethodOptions = [
   { value: "PIX", label: "PIX" },
@@ -53,8 +54,12 @@ export function ServiceDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { addToast } = useToastContext();
+
   const [service, setService] = useState<Service | null>(null);
   const [loading, setLoading] = useState(true);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
 
@@ -68,22 +73,46 @@ export function ServiceDetailPage() {
     defaultValues: { amount: 0, paidAt: new Date().toISOString().split("T")[0] },
   });
 
-  useEffect(() => {
+  const loadService = useCallback(async () => {
     if (!id) return;
-    serviceService.getById(id).then((s) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const s = await serviceService.getById(id);
       setService(s);
+    } catch (err: any) {
+      console.error("Erro ao carregar detalhes do pedido:", err);
+      setError(
+        err?.message ||
+          "Não foi possível carregar os detalhes do pedido. Verifique se o servidor está ativo."
+      );
+    } finally {
       setLoading(false);
-    });
+    }
   }, [id]);
 
-  const handleAdvanceStatus = async () => {
-    if (!service) return;
-    const currentIndex = statusOrder[service.status];
-    if (currentIndex >= statusFlow.length - 1) return;
-    const nextStatus = statusFlow[currentIndex + 1].status;
-    const updated = await serviceService.updateStatus(service.id, nextStatus);
-    setService(updated);
-    addToast(`Status atualizado para "${statusFlow[currentIndex + 1].label}".`, "success");
+  useEffect(() => {
+    loadService();
+  }, [loadService]);
+
+  // Alterar status diretamente refletindo no banco via PATCH /pedidos/:id/status
+  const handleStatusChange = async (newStatusValue: string, label: string) => {
+    if (!service || updatingStatus) return;
+
+    setUpdatingStatus(true);
+    try {
+      const updated = await serviceService.updateStatus(service.id, newStatusValue);
+      setService(updated);
+      addToast(`Status do pedido alterado para "${label}" com sucesso!`, "success");
+    } catch (err: any) {
+      console.error("Erro ao atualizar status:", err);
+      addToast(
+        err?.message || "Erro ao atualizar status no servidor. Tente novamente.",
+        "error"
+      );
+    } finally {
+      setUpdatingStatus(false);
+    }
   };
 
   const onPaymentSubmit = async (data: NewPaymentSchema) => {
@@ -99,14 +128,14 @@ export function ServiceDetailPage() {
       addToast("Pagamento registrado com sucesso.", "success");
       setPaymentModalOpen(false);
       reset();
-      // Update service paidAmount in mock
-      const updatedService = { ...service, paidAmount: service.paidAmount + data.amount };
-      if (updatedService.paidAmount >= updatedService.totalAmount) {
-        const s = await serviceService.updateStatus(service.id, "AGUARDANDO_PAGAMENTO");
-        setService({ ...s, paidAmount: updatedService.paidAmount, paymentStatus: "PAGO" });
-      } else {
-        setService(updatedService);
-      }
+      const newPaid = service.paidAmount + data.amount;
+      const isPaid = newPaid >= service.totalAmount;
+      const updated = await serviceService.update(service.id, {
+        paidAmount: newPaid,
+        paymentStatus: isPaid ? "PAGO" : "PARCIAL",
+        paymentMethod: data.method,
+      });
+      setService(updated);
     } catch {
       addToast("Erro ao registrar pagamento.", "error");
     }
@@ -114,32 +143,64 @@ export function ServiceDetailPage() {
 
   if (loading) return <Loading />;
 
+  if (error) {
+    return (
+      <div className="animate-fade-in max-w-2xl py-8">
+        <div className="p-5 rounded-2xl bg-red-50 border border-red-200 text-red-800 flex flex-col gap-3">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0" />
+            <div>
+              <h3 className="font-semibold text-base">Falha ao carregar pedido</h3>
+              <p className="text-sm text-red-700 mt-1">{error}</p>
+            </div>
+          </div>
+          <div className="flex gap-2 mt-2">
+            <Button
+              size="sm"
+              onClick={loadService}
+              leftIcon={<RefreshCw className="w-4 h-4" />}
+            >
+              Tentar novamente
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => navigate("/servicos")}
+            >
+              Voltar para pedidos
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!service) {
     return (
       <EmptyState
         title="Serviço não encontrado."
+        description="O pedido solicitado não existe ou foi removido."
         action={
           <Button onClick={() => navigate("/servicos")} size="sm">
-            Voltar
+            Voltar para pedidos
           </Button>
         }
       />
     );
   }
 
-  const currentStatusIndex = statusOrder[service.status];
-  const canAdvance = currentStatusIndex < statusFlow.length - 1;
+  const currentStatusNormalized = (service.status || "").toUpperCase();
 
   return (
     <div className="animate-fade-in max-w-2xl">
       <PageHeader
-        title={`Serviço ${formatServiceCode(service.code)}`}
+        title={`Pedido ${formatServiceCode(service.code)}`}
         breadcrumbs={[
           { label: "Serviços", href: "/servicos" },
           { label: formatServiceCode(service.code) },
         ]}
         actions={
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap flex-shrink-0">
             {service.paymentStatus !== "PAGO" && (
               <Button
                 size="sm"
@@ -149,15 +210,10 @@ export function ServiceDetailPage() {
                 Registrar pagamento
               </Button>
             )}
-            {canAdvance && (
-              <Button size="sm" onClick={handleAdvanceStatus}>
-                Avançar status
-              </Button>
-            )}
             <Button
               size="sm"
               variant="outline"
-              leftIcon={<Send className="w-3.5 h-3.5" />}
+              leftIcon={<Send className="w-3.5 h-3.5 flex-shrink-0" />}
               onClick={() => setShareModalOpen(true)}
             >
               Compartilhar
@@ -166,19 +222,19 @@ export function ServiceDetailPage() {
         }
       />
 
-      {/* Client info */}
+      {/* Informações do Cliente */}
       <Card className="mb-4">
         <div className="flex items-start justify-between gap-3">
           <div>
             <button
               onClick={() => navigate(`/clientes/${service.clientId}`)}
-              className="text-base font-bold text-slate-800 hover:text-indigo-600 transition-colors"
+              className="text-base font-bold text-slate-800 hover:text-indigo-600 transition-colors text-left"
             >
               {service.clientName}
             </button>
             <p className="text-sm text-slate-500">{service.clientPhone}</p>
           </div>
-          <div className="flex flex-col items-end gap-1">
+          <div className="flex flex-col items-end gap-1 flex-shrink-0">
             <ServiceStatusBadge status={service.status} />
             <PaymentStatusBadge status={service.paymentStatus} size="sm" />
           </div>
@@ -207,70 +263,129 @@ export function ServiceDetailPage() {
         </div>
       </Card>
 
-      {/* Status timeline */}
+      {/* Alteração e Linha do Tempo do Status */}
       <Card className="mb-4">
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-4">
-          Progresso
-        </p>
-        <div className="flex flex-col gap-0">
-          {statusFlow.map((step, i) => {
-            const isDone = i < currentStatusIndex;
-            const isCurrent = i === currentStatusIndex;
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+              Status do Pedido no Banco de Dados
+            </p>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Clique em qualquer status para alterar diretamente no sistema:
+            </p>
+          </div>
+          {updatingStatus && (
+            <span className="inline-flex items-center gap-1 text-xs text-indigo-600 font-medium animate-pulse">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Atualizando...
+            </span>
+          )}
+        </div>
+
+        {/* Botões de Seleção Rápida de Status */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
+          {availableStatuses.map((st) => {
+            const isActive =
+              currentStatusNormalized === st.internal ||
+              (st.internal === "EM_ANDAMENTO" && currentStatusNormalized === "PASSANDO");
+
             return (
-              <div key={step.status} className="flex items-start gap-3">
-                <div className="flex flex-col items-center">
+              <button
+                key={st.value}
+                type="button"
+                disabled={updatingStatus}
+                onClick={() => handleStatusChange(st.value, st.label)}
+                className={`p-2.5 rounded-xl text-left border transition-all flex flex-col justify-between cursor-pointer ${
+                  isActive
+                    ? "bg-indigo-50 border-indigo-500 text-indigo-900 shadow-sm ring-2 ring-indigo-200"
+                    : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300"
+                } ${updatingStatus ? "opacity-60 cursor-not-allowed" : ""}`}
+              >
+                <div className="flex items-center justify-between w-full mb-1">
+                  <span className="text-xs font-bold">{st.label}</span>
+                  {isActive && <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600 flex-shrink-0" />}
+                </div>
+                <span className="text-[10px] text-slate-500 line-clamp-1">{st.desc}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Linha visual de progresso */}
+        <div className="border-t border-slate-100 pt-4 flex flex-col gap-0">
+          {availableStatuses.map((step, i) => {
+            const isStepCurrent =
+              currentStatusNormalized === step.internal ||
+              (step.internal === "EM_ANDAMENTO" && currentStatusNormalized === "PASSANDO");
+
+            const currentIndex = availableStatuses.findIndex(
+              (s) =>
+                s.internal === currentStatusNormalized ||
+                (s.internal === "EM_ANDAMENTO" && currentStatusNormalized === "PASSANDO")
+            );
+            const isStepDone = i < currentIndex;
+
+            return (
+              <div key={step.value} className="flex items-start gap-3">
+                <div className="flex flex-col items-center flex-shrink-0">
                   <div
                     className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${
-                      isDone
+                      isStepDone
                         ? "bg-emerald-500"
-                        : isCurrent
+                        : isStepCurrent
                         ? "bg-indigo-600"
                         : "bg-slate-100"
                     }`}
                   >
-                    {isDone ? (
-                      <CheckCircle2 className="w-4 h-4 text-white" />
-                    ) : isCurrent ? (
-                      <Circle className="w-4 h-4 text-white fill-white" />
+                    {isStepDone ? (
+                      <CheckCircle2 className="w-4 h-4 text-white flex-shrink-0" />
+                    ) : isStepCurrent ? (
+                      <Circle className="w-4 h-4 text-white fill-white flex-shrink-0" />
                     ) : (
-                      <Circle className="w-4 h-4 text-slate-300" />
+                      <Circle className="w-4 h-4 text-slate-300 flex-shrink-0" />
                     )}
                   </div>
-                  {i < statusFlow.length - 1 && (
+                  {i < availableStatuses.length - 1 && (
                     <div
                       className={`w-0.5 h-6 mt-1 ${
-                        isDone ? "bg-emerald-300" : "bg-slate-100"
+                        isStepDone ? "bg-emerald-300" : "bg-slate-100"
                       }`}
                     />
                   )}
                 </div>
-                <p
-                  className={`text-sm leading-7 ${
-                    isDone
-                      ? "text-emerald-700 font-medium"
-                      : isCurrent
-                      ? "text-indigo-700 font-semibold"
-                      : "text-slate-400"
-                  }`}
-                >
-                  {step.label}
-                </p>
+                <div className="flex items-center justify-between flex-1 py-1">
+                  <p
+                    className={`text-sm ${
+                      isStepDone
+                        ? "text-emerald-700 font-medium"
+                        : isStepCurrent
+                        ? "text-indigo-700 font-semibold"
+                        : "text-slate-400"
+                    }`}
+                  >
+                    {step.label}
+                  </p>
+                  {isStepCurrent && (
+                    <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-medium">
+                      Status atual
+                    </span>
+                  )}
+                </div>
               </div>
             );
           })}
         </div>
       </Card>
 
-      {/* Items */}
+      {/* Itens do Pedido */}
       <Card className="mb-4">
         <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-4">
-          Itens do serviço
+          Itens do serviço ({service.totalPieces} peças)
         </p>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100">
-                <th className="pb-2 text-left text-xs text-slate-500 font-medium">Roupa</th>
+                <th className="pb-2 text-left text-xs text-slate-500 font-medium">Serviço / Roupa</th>
                 <th className="pb-2 text-right text-xs text-slate-500 font-medium">Qtd</th>
                 <th className="pb-2 text-right text-xs text-slate-500 font-medium">Valor unit.</th>
                 <th className="pb-2 text-right text-xs text-slate-500 font-medium">Subtotal</th>
@@ -299,7 +414,7 @@ export function ServiceDetailPage() {
           </table>
         </div>
 
-        {/* Payment info */}
+        {/* Informação de Pagamento */}
         {service.paymentMethod && (
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-2 text-sm text-slate-600">
             <span>Pago via {formatPaymentMethod(service.paymentMethod)}</span>

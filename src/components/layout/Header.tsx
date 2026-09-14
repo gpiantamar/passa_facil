@@ -33,14 +33,14 @@ export function Header({ onMenuClick }: HeaderProps) {
       {/* Mobile menu toggle */}
       <button
         onClick={onMenuClick}
-        className="p-2 -ml-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors lg:hidden"
+        className="p-2 -ml-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors lg:hidden flex items-center justify-center flex-shrink-0"
         aria-label="Abrir menu"
       >
-        <Menu className="w-5 h-5" />
+        <Menu className="w-5 h-5 flex-shrink-0" />
       </button>
 
       {/* Title (mobile) */}
-      <h1 className="text-sm font-semibold text-slate-800 ml-2 lg:hidden">
+      <h1 className="text-sm font-semibold text-slate-800 ml-2 lg:hidden truncate">
         {title}
       </h1>
 
@@ -49,16 +49,15 @@ export function Header({ onMenuClick }: HeaderProps) {
 
       {/* Notifications */}
       <button
-        className="relative p-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors"
+        className="relative p-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors flex items-center justify-center flex-shrink-0"
         aria-label="Notificações"
       >
-        <Bell className="w-5 h-5" />
-        <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
+        <Bell className="w-5 h-5 flex-shrink-0" />
       </button>
 
       {/* Avatar */}
-      <div className="ml-2 w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
-        <span className="text-xs font-bold text-indigo-700">A</span>
+      <div className="ml-2 w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
+        <span className="text-xs font-bold text-indigo-700">P</span>
       </div>
     </header>
   );

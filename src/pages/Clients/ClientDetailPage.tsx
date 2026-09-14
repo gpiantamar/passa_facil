@@ -61,7 +61,7 @@ export function ClientDetailPage() {
           { label: client.name },
         ]}
         actions={
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap flex-shrink-0">
             <Button
               variant="outline"
               size="sm"
@@ -71,7 +71,7 @@ export function ClientDetailPage() {
             </Button>
             <Button
               size="sm"
-              leftIcon={<Plus className="w-3.5 h-3.5" />}
+              leftIcon={<Plus className="w-3.5 h-3.5 flex-shrink-0" />}
               onClick={() => navigate(`/servicos/novo?clientId=${id}`)}
             >
               Novo serviço
