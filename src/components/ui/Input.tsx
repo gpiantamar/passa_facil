@@ -41,7 +41,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
               ${
                 error
                   ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100"
-                  : "border-slate-200 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50"
+                  : "border-slate-200 focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
               }
               focus:outline-none
               disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed

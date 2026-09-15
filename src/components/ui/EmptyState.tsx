@@ -24,10 +24,9 @@ export function EmptyState({
       }`}
     >
       <div className="relative mb-4">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-50 to-sky-50 border border-indigo-100/60 flex items-center justify-center shadow-sm">
-          <Icon className="w-8 h-8 text-indigo-500" />
+        <div className="w-16 h-16 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center shadow-sm">
+          <Icon className="w-8 h-8 text-slate-500" />
         </div>
-        <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-indigo-500/10 blur-sm" />
       </div>
 
       <h3 className="text-base font-bold text-slate-800 mb-1">{title}</h3>

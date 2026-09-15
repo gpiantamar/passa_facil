@@ -43,12 +43,12 @@ export function Sidebar({ open, onClose }: SidebarProps) {
     <aside className="flex flex-col h-full bg-white border-r border-slate-200/80">
       {/* Logo e Identificação Operacional */}
       <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
-        <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center flex-shrink-0 shadow-xs shadow-indigo-200 text-white">
+        <div className="w-9 h-9 rounded-xl bg-slate-900 flex items-center justify-center flex-shrink-0 text-white">
           <Wind className="w-5 h-5" />
         </div>
         <div className="min-w-0">
           <p className="text-sm font-extrabold text-slate-900 leading-tight">PassaFácil</p>
-          <p className="text-[11px] font-semibold text-indigo-600 uppercase tracking-wider">Painel Operacional</p>
+          <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Painel Operacional</p>
         </div>
         {onClose && (
           <button
@@ -73,7 +73,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-150 ${
                     isActive
-                      ? "bg-indigo-50 text-indigo-700 shadow-2xs"
+                      ? "bg-slate-900 text-white"
                       : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                   }`
                 }
@@ -82,7 +82,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
                   <>
                     <item.icon
                       className={`w-4.5 h-4.5 flex-shrink-0 ${
-                        isActive ? "text-indigo-600" : "text-slate-400"
+                        isActive ? "text-white" : "text-slate-400"
                       }`}
                     />
                     <span className="truncate">{item.label}</span>
@@ -109,8 +109,8 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       {/* Rodapé do Usuário Operador */}
       <div className="px-3 py-3 border-t border-slate-100 bg-slate-50/50">
         <div className="flex items-center gap-3 px-2 py-1.5 rounded-xl">
-          <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-            <span className="text-xs font-bold text-indigo-700">OP</span>
+          <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center flex-shrink-0">
+            <span className="text-xs font-bold text-white">OP</span>
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-bold text-slate-800 leading-tight truncate">

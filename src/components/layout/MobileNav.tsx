@@ -23,13 +23,13 @@ export function MobileNav() {
           end
           className={({ isActive }) =>
             `flex-1 flex flex-col items-center gap-0.5 py-2 text-[11px] font-bold transition-colors ${
-              isActive ? "text-indigo-600" : "text-slate-500"
+              isActive ? "text-slate-900" : "text-slate-500"
             }`
           }
         >
           {({ isActive }) => (
             <>
-              <LayoutDashboard className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-indigo-600" : "text-slate-400"}`} />
+              <LayoutDashboard className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-slate-900" : "text-slate-400"}`} />
               <span className="truncate">Painel</span>
             </>
           )}
@@ -40,13 +40,13 @@ export function MobileNav() {
           to="/painel/clientes"
           className={({ isActive }) =>
             `flex-1 flex flex-col items-center gap-0.5 py-2 text-[11px] font-bold transition-colors ${
-              isActive ? "text-indigo-600" : "text-slate-500"
+              isActive ? "text-slate-900" : "text-slate-500"
             }`
           }
         >
           {({ isActive }) => (
             <>
-              <Users className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-indigo-600" : "text-slate-400"}`} />
+              <Users className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-slate-900" : "text-slate-400"}`} />
               <span className="truncate">Clientes</span>
             </>
           )}
@@ -56,7 +56,7 @@ export function MobileNav() {
         <div className="flex-1 flex items-center justify-center">
           <button
             onClick={() => navigate("/painel/servicos/novo")}
-            className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-300 hover:bg-indigo-700 active:scale-95 transition-all flex-shrink-0"
+            className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center shadow-md hover:bg-slate-700 active:scale-95 transition-all flex-shrink-0"
             aria-label="Nova comanda"
             title="Nova comanda"
           >
@@ -69,13 +69,13 @@ export function MobileNav() {
           to="/painel/pedidos"
           className={({ isActive }) =>
             `flex-1 flex flex-col items-center gap-0.5 py-2 text-[11px] font-bold transition-colors ${
-              isActive ? "text-indigo-600" : "text-slate-500"
+              isActive ? "text-slate-900" : "text-slate-500"
             }`
           }
         >
           {({ isActive }) => (
             <>
-              <Shirt className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-indigo-600" : "text-slate-400"}`} />
+              <Shirt className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-slate-900" : "text-slate-400"}`} />
               <span className="truncate">Pedidos</span>
             </>
           )}
@@ -86,13 +86,13 @@ export function MobileNav() {
           to="/painel/tabela-precos"
           className={({ isActive }) =>
             `flex-1 flex flex-col items-center gap-0.5 py-2 text-[11px] font-bold transition-colors ${
-              isActive ? "text-indigo-600" : "text-slate-500"
+              isActive ? "text-slate-900" : "text-slate-500"
             }`
           }
         >
           {({ isActive }) => (
             <>
-              <Tag className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-indigo-600" : "text-slate-400"}`} />
+              <Tag className={`w-5 h-5 flex-shrink-0 ${isActive ? "text-slate-900" : "text-slate-400"}`} />
               <span className="truncate">Preços</span>
             </>
           )}

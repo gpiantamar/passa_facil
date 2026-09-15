@@ -44,14 +44,14 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-slate-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="w-full max-w-sm animate-fade-in">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200 mb-4 flex-shrink-0">
-            <Wind className="w-7 h-7 text-white flex-shrink-0" />
+          <div className="w-12 h-12 rounded-xl bg-slate-900 flex items-center justify-center mb-4 flex-shrink-0">
+            <Wind className="w-6 h-6 text-white flex-shrink-0" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-800">PassaFácil</h1>
+          <h1 className="text-2xl font-bold text-slate-900">PassaFácil</h1>
           <p className="text-sm text-slate-500 mt-1">Gestão simples para sua passadoria.</p>
         </div>
 

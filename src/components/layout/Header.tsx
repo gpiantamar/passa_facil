@@ -65,7 +65,7 @@ export function Header({ onMenuClick }: HeaderProps) {
       {/* Botão para alternar e voltar à Landing Page */}
       <Link
         to="/"
-        className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-indigo-600 hover:bg-slate-50 border border-slate-200/80 transition-colors mr-2"
+        className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200/80 transition-colors mr-2"
         title="Ver Landing Page pública"
       >
         <Globe className="w-3.5 h-3.5 text-slate-400" />
@@ -88,8 +88,8 @@ export function Header({ onMenuClick }: HeaderProps) {
       </button>
 
       {/* Avatar do Operador */}
-      <div className="ml-2 w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 border border-indigo-200">
-        <span className="text-xs font-bold text-indigo-700">OP</span>
+      <div className="ml-2 w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center flex-shrink-0">
+        <span className="text-xs font-bold text-white">OP</span>
       </div>
     </header>
   );
