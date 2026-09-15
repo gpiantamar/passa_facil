@@ -3,11 +3,14 @@
 // Configurado com fallback inteligente, blindagem de CORS e conversão de tipos
 // ============================================================================
 
-// 1. Definição da URL base com fallback à prova de falhas
+// 1. Definição da URL base:
+//    - Em desenvolvimento local (Vite dev server), usa VITE_API_URL ou localhost:3333
+//    - Em produção (Vercel), frontend e API ficam no mesmo domínio: URL relativa ""
 export const API_URL =
-  (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_API_URL) ||
   (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL) ||
-  "http://localhost:3333";
+  (typeof import.meta !== "undefined" && import.meta.env?.DEV
+    ? "http://localhost:3333"
+    : "");
 
 // Remove barras no final para garantir padronização dos caminhos
 const BASE_URL = API_URL.replace(/\/+$/, "");

@@ -52,9 +52,13 @@ app.get("/", handleStatus);
 // =============================================
 const handleLogin = (req, res) => {
   const { email, password } = req.body || {};
-  const appEmail = process.env.APP_EMAIL || "admin@passafacil.com";
-  const appPassword = process.env.APP_PASSWORD || "admin123";
-  const jwtSecret = process.env.JWT_SECRET || "passafacil-super-secret-key-development";
+  const appEmail = process.env.APP_EMAIL;
+  const appPassword = process.env.APP_PASSWORD;
+  const jwtSecret = process.env.JWT_SECRET;
+
+  if (!appEmail || !appPassword || !jwtSecret) {
+    return res.status(500).json({ erro: "Variáveis APP_EMAIL, APP_PASSWORD ou JWT_SECRET não configuradas." });
+  }
 
   if (!email || !password) {
     return res.status(400).json({ erro: "Email e senha são obrigatórios." });
@@ -64,7 +68,7 @@ const handleLogin = (req, res) => {
     return res.status(401).json({ erro: "Credenciais inválidas. Verifique seu e-mail e senha." });
   }
 
-  const token = jwt.sign({ role: "admin", email }, jwtSecret, { expiresIn: "7d" });
+  const token = jwt.sign({ role: "admin", email }, jwtSecret, { expiresIn: "7d", issuer: "passa-facil" });
   return res.status(200).json({ token, expiresIn: 604800 });
 };
 

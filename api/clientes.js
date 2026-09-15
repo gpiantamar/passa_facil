@@ -29,7 +29,7 @@ export default async function handler(req, res) {
   if (req.method === "GET") {
     try {
       const clientes = await prisma.cliente.findMany({
-        orderBy: { createdAt: "desc" },
+        orderBy: { criadoEm: "desc" },
       });
       return res.status(200).json(clientes);
     } catch (error) {

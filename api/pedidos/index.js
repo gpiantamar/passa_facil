@@ -35,7 +35,7 @@ export default async function handler(req, res) {
           cliente: true,
           itens: { include: { servico: true } },
         },
-        orderBy: { createdAt: "desc" },
+        orderBy: { criadoEm: "desc" },
       });
       return res.status(200).json(pedidos);
     } catch (error) {
@@ -49,11 +49,13 @@ export default async function handler(req, res) {
     try {
       const { clienteId, itens, observacoes, previsaoPara, status = "recebido" } = req.body;
 
-      if (!clienteId || typeof clienteId !== "string") {
-        return res.status(400).json({ error: "O campo 'clienteId' é obrigatório." });
+      // IDs são Int no schema Prisma (autoincrement)
+      const parsedClienteId = parseInt(clienteId, 10);
+      if (isNaN(parsedClienteId) || parsedClienteId <= 0) {
+        return res.status(400).json({ error: "O campo 'clienteId' deve ser um número inteiro válido." });
       }
 
-      const clienteExiste = await prisma.cliente.findUnique({ where: { id: clienteId } });
+      const clienteExiste = await prisma.cliente.findUnique({ where: { id: parsedClienteId } });
       if (!clienteExiste) {
         return res.status(404).json({ error: "Cliente não encontrado." });
       }
@@ -66,20 +68,21 @@ export default async function handler(req, res) {
       let valorTotalCalculado = 0;
 
       for (const item of itens) {
-        if (!item.servicoId || typeof item.servicoId !== "string") {
+        const servicoId = parseInt(item.servicoId, 10);
+        if (isNaN(servicoId) || servicoId <= 0) {
           return res.status(400).json({ error: "Cada item do pedido deve possuir um 'servicoId' válido." });
         }
 
         const quantidade = parseInt(item.quantidade, 10);
         if (isNaN(quantidade) || quantidade <= 0) {
           return res.status(400).json({
-            error: `Quantidade inválida para o serviço '${item.servicoId}'.`,
+            error: `Quantidade inválida para o serviço '${servicoId}'.`,
           });
         }
 
-        const servico = await prisma.servico.findUnique({ where: { id: item.servicoId } });
+        const servico = await prisma.servico.findUnique({ where: { id: servicoId } });
         if (!servico) {
-          return res.status(404).json({ error: `Serviço com id '${item.servicoId}' não foi encontrado.` });
+          return res.status(404).json({ error: `Serviço com id '${servicoId}' não foi encontrado.` });
         }
 
         const valorUnit =
@@ -88,7 +91,7 @@ export default async function handler(req, res) {
             : servico.preco;
 
         valorTotalCalculado += quantidade * valorUnit;
-        itensProcessados.push({ servicoId: item.servicoId, quantidade, valorUnit });
+        itensProcessados.push({ servicoId, quantidade, valorUnit });
       }
 
       const statusFinal = typeof status === "string" ? status.toLowerCase().trim() : "recebido";
@@ -100,7 +103,7 @@ export default async function handler(req, res) {
 
       const novoPedido = await prisma.pedido.create({
         data: {
-          clienteId,
+          clienteId: parsedClienteId,
           status: statusFinal,
           valorTotal: parseFloat(valorTotalCalculado.toFixed(2)),
           observacoes: observacoes && typeof observacoes === "string" ? observacoes.trim() : null,

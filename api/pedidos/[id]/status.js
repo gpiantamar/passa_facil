@@ -33,8 +33,10 @@ export default async function handler(req, res) {
       const { id } = req.query;
       const { status } = req.body;
 
-      if (!id || typeof id !== "string") {
-        return res.status(400).json({ error: "ID do pedido é obrigatório." });
+      // IDs são Int no schema Prisma (autoincrement)
+      const parsedId = parseInt(id, 10);
+      if (isNaN(parsedId) || parsedId <= 0) {
+        return res.status(400).json({ error: "ID do pedido deve ser um número inteiro válido." });
       }
 
       if (!status || typeof status !== "string") {
@@ -48,13 +50,13 @@ export default async function handler(req, res) {
         });
       }
 
-      const pedidoExistente = await prisma.pedido.findUnique({ where: { id } });
+      const pedidoExistente = await prisma.pedido.findUnique({ where: { id: parsedId } });
       if (!pedidoExistente) {
         return res.status(404).json({ error: "Pedido não encontrado." });
       }
 
       const pedidoAtualizado = await prisma.pedido.update({
-        where: { id },
+        where: { id: parsedId },
         data: { status: statusNormalizado },
         include: {
           cliente: true,
