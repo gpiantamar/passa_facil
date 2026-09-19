@@ -30,6 +30,12 @@ export default async function handler(req, res) {
     try {
       const clientes = await prisma.cliente.findMany({
         orderBy: { criadoEm: "desc" },
+        include: {
+          pedidos: {
+            select: { id: true, criadoEm: true, valorTotal: true, status: true },
+            orderBy: { criadoEm: "desc" },
+          },
+        },
       });
       return res.status(200).json(clientes);
     } catch (error) {

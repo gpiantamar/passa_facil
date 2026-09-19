@@ -225,9 +225,9 @@ export function DashboardPage() {
       {/* ── BARRA SUPERIOR OPERACIONAL COM MÉTRICAS RÁPIDAS ─────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Peças a passar hoje */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-xs flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
-            <Shirt className="w-5 h-5 text-indigo-600" />
+        <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-xs flex items-center gap-3.5 hover:shadow-sm hover:-translate-y-px transition-all">
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center flex-shrink-0 shadow-sm shadow-indigo-200">
+            <Shirt className="w-5 h-5 text-white" />
           </div>
           <div className="min-w-0">
             <p className="text-xs font-semibold text-slate-500 truncate">Peças a passar hoje</p>
@@ -238,9 +238,9 @@ export function DashboardPage() {
         </div>
 
         {/* Pedidos em andamento */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-xs flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center flex-shrink-0">
-            <Sparkles className="w-5 h-5 text-amber-600" />
+        <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-xs flex items-center gap-3.5 hover:shadow-sm hover:-translate-y-px transition-all">
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center flex-shrink-0 shadow-sm shadow-amber-200">
+            <Sparkles className="w-5 h-5 text-white" />
           </div>
           <div className="min-w-0">
             <p className="text-xs font-semibold text-slate-500 truncate">Pedidos em andamento</p>
@@ -251,9 +251,9 @@ export function DashboardPage() {
         </div>
 
         {/* Prontos aguardando entrega */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-xs flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center flex-shrink-0">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+        <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-xs flex items-center gap-3.5 hover:shadow-sm hover:-translate-y-px transition-all">
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center flex-shrink-0 shadow-sm shadow-emerald-200">
+            <CheckCircle2 className="w-5 h-5 text-white" />
           </div>
           <div className="min-w-0">
             <p className="text-xs font-semibold text-slate-500 truncate">Prontos p/ entrega</p>
@@ -264,9 +264,9 @@ export function DashboardPage() {
         </div>
 
         {/* Faturamento do dia */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-xs flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center flex-shrink-0">
-            <DollarSign className="w-5 h-5 text-sky-600" />
+        <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-xs flex items-center gap-3.5 hover:shadow-sm hover:-translate-y-px transition-all">
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-sky-500 to-sky-700 flex items-center justify-center flex-shrink-0 shadow-sm shadow-sky-200">
+            <DollarSign className="w-5 h-5 text-white" />
           </div>
           <div className="min-w-0">
             <p className="text-xs font-semibold text-slate-500 truncate">Faturamento hoje</p>
@@ -277,7 +277,9 @@ export function DashboardPage() {
         </div>
       </div>
 
+
       {/* ── BARRA DE AÇÃO OPERACIONAL E BUSCA ───────────────────────────────── */}
+
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-100 shadow-xs">
         <div className="relative flex-1 sm:max-w-xs">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -502,9 +504,19 @@ function OperationalOrderCard({
   // Link direto do WhatsApp Web com a mensagem exata solicitada
   const whatsAppReadyUrl = getWhatsAppReadyUrl(service.clientPhone, service.clientName);
 
+  // Verificar se o prazo está expirado
+  const isOverdue = service.expectedDeliveryAt
+    ? new Date(service.expectedDeliveryAt) < new Date() && stage.id !== "ENTREGUE"
+    : false;
+
+  // Inicial do nome do cliente para o avatar
+  const clientInitial = service.clientName ? service.clientName.charAt(0).toUpperCase() : "?";
+
   return (
-    <div className="bg-white rounded-xl p-3 border border-slate-200/90 shadow-2xs hover:shadow-sm transition-all flex flex-col gap-2.5 group">
-      {/* Linha 1: Código + Status Tag */}
+    <div className={`bg-white rounded-xl p-3 border shadow-2xs hover:shadow-sm transition-all flex flex-col gap-2.5 group ${
+      isOverdue ? "border-red-200 bg-red-50/30" : "border-slate-200/90"
+    }`}>
+      {/* Linha 1: Código + Status Tag + Avatar */}
       <div className="flex items-center justify-between gap-2">
         <button
           onClick={onNavigate}
@@ -512,22 +524,34 @@ function OperationalOrderCard({
         >
           {formatServiceCode(service.code)}
         </button>
-        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${stage.colorClass.badge}`}>
-          {stage.label}
-        </span>
+        <div className="flex items-center gap-1.5 ml-auto">
+          {isOverdue && (
+            <span className="text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-full animate-pulse-dot">
+              Atrasado
+            </span>
+          )}
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${stage.colorClass.badge}`}>
+            {stage.label}
+          </span>
+        </div>
       </div>
 
-      {/* Linha 2: Nome do Cliente */}
-      <div>
-        <button
-          onClick={onNavigate}
-          className="text-sm font-bold text-slate-800 hover:text-indigo-600 transition-colors text-left truncate block w-full leading-tight"
-        >
-          {service.clientName}
-        </button>
-        {service.clientPhone && (
-          <p className="text-[11px] text-slate-400 truncate mt-0.5">{service.clientPhone}</p>
-        )}
+      {/* Linha 2: Avatar + Nome do Cliente */}
+      <div className="flex items-center gap-2">
+        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center flex-shrink-0 shadow-sm">
+          <span className="text-[11px] font-bold text-white">{clientInitial}</span>
+        </div>
+        <div className="min-w-0">
+          <button
+            onClick={onNavigate}
+            className="text-sm font-bold text-slate-800 hover:text-indigo-600 transition-colors text-left truncate block w-full leading-tight"
+          >
+            {service.clientName}
+          </button>
+          {service.clientPhone && (
+            <p className="text-[11px] text-slate-400 truncate">{service.clientPhone}</p>
+          )}
+        </div>
       </div>
 
       {/* Linha 3: Resumo de Peças */}
@@ -539,8 +563,10 @@ function OperationalOrderCard({
       </div>
 
       {/* Linha 4: Previsão e Valor Total */}
-      <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
-        <span className="text-slate-400 text-[11px]">
+      <div className={`flex items-center justify-between text-xs pt-1 border-t ${
+        isOverdue ? "border-red-100" : "border-slate-100"
+      }`}>
+        <span className={`text-[11px] font-medium ${isOverdue ? "text-red-500" : "text-slate-400"}`}>
           {service.expectedDeliveryAt ? formatDate(service.expectedDeliveryAt) : "Sem prazo"}
         </span>
         <span className="font-extrabold text-slate-900 text-sm">
@@ -548,7 +574,7 @@ function OperationalOrderCard({
         </span>
       </div>
 
-      {/* NO STATUS "PRONTO": Botão verde de WhatsApp com mensagem oficial */}
+      {/* NO STATUS "PRONTO": Botão verde de WhatsApp com pulse ring */}
       {stage.id === "PRONTO" && (
         <a
           href={whatsAppReadyUrl}
@@ -560,7 +586,7 @@ function OperationalOrderCard({
               alert("Cliente sem telefone cadastrado.");
             }
           }}
-          className="w-full bg-[#25D366] hover:bg-[#1ebe5d] active:bg-[#1aa352] text-white text-xs font-bold py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-xs shadow-green-200"
+          className="pulse-ring w-full bg-[#25D366] hover:bg-[#1ebe5d] active:bg-[#1aa352] text-white text-xs font-bold py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-xs shadow-green-200"
           title="Abrir WhatsApp com aviso de roupas prontas"
         >
           <MessageCircle className="w-4 h-4 flex-shrink-0" />
@@ -577,7 +603,7 @@ function OperationalOrderCard({
           }
           className={`w-full text-xs font-bold py-1.5 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-2xs ${
             stage.colorClass.button
-          } ${isUpdating ? "opacity-60 cursor-not-allowed" : "hover:brightness-105 active:scale-98"}`}
+          } ${isUpdating ? "opacity-60 cursor-not-allowed" : "hover:brightness-105 active:scale-[0.98]"}`}
         >
           {isUpdating ? (
             <span>Atualizando...</span>

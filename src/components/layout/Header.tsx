@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { Bell, Menu, LogOut, Globe } from "lucide-react";
+import { Menu, LogOut, Globe } from "lucide-react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { DarkModeToggle } from "../ui/DarkModeToggle";
 
 const pageTitles: Record<string, string> = {
   "/painel": "Painel Operacional",
@@ -61,6 +62,9 @@ export function Header({ onMenuClick }: HeaderProps) {
       </h1>
 
       <div className="flex-1" />
+
+      {/* Toggle dark mode */}
+      <DarkModeToggle className="mr-1" />
 
       {/* Botão para alternar e voltar à Landing Page */}
       <Link

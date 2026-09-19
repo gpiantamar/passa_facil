@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-1.0.x", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
@@ -9,12 +10,14 @@ datasource db {
 }
 
 model Cliente {
-  id        Int      @id @default(autoincrement())
-  nome      String
-  telefone  String
-  endereco  String?
-  pedidos   Pedido[]
-  criadoEm  DateTime @default(now())
+  id       Int      @id @default(autoincrement())
+  nome     String
+  telefone String
+  endereco String?
+  pedidos  Pedido[]
+  criadoEm DateTime @default(now())
+
+  @@map("clientes")
 }
 
 model Servico {
@@ -23,6 +26,8 @@ model Servico {
   preco       Float
   unidade     String       @default("un")
   itensPedido ItemPedido[]
+
+  @@map("servicos")
 }
 
 model Pedido {
@@ -35,6 +40,8 @@ model Pedido {
   itens        ItemPedido[]
   criadoEm     DateTime     @default(now())
   previsaoPara DateTime?
+
+  @@map("pedidos")
 }
 
 model ItemPedido {
@@ -45,4 +52,6 @@ model ItemPedido {
   servico    Servico @relation(fields: [servicoId], references: [id])
   quantidade Int
   valorUnit  Float
+
+  @@map("itens_pedido")
 }

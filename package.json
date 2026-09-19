@@ -8,8 +8,8 @@
     "dev": "nodemon server.js",
     "seed": "node seed.js",
     "dev:ui": "vite",
-    "build": "tsc -b && vite build",
-    "postinstall": "prisma generate --schema=server/prisma/schema.prisma",
+    "build": "prisma generate && tsc -b && vite build",
+    "postinstall": "prisma generate",
     "lint": "oxlint",
     "preview": "vite preview"
   },
@@ -21,6 +21,7 @@
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^1.39.0",
+    "prisma": "^5.22.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-hook-form": "^7.87.0",
@@ -37,7 +38,6 @@
     "@vitejs/plugin-react": "^6.1.0",
     "nodemon": "^3.1.14",
     "oxlint": "^1.79.0",
-    "prisma": "^5.22.0",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
     "vite": "^8.2.2"
